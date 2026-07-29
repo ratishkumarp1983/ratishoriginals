@@ -1,35 +1,45 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+import { getOverview } from "@/lib/analytics";
+import { formatPrice } from "@/lib/format";
 import { buttonVariants } from "@/components/ui/button";
 
 export const metadata: Metadata = { title: "Admin" };
+export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
-  const [totalDocs, publishedDocs, metadataFields, readers] = await Promise.all([
+  const [totalDocs, publishedDocs, readers, overview] = await Promise.all([
     prisma.document.count(),
     prisma.document.count({ where: { status: "PUBLISHED" } }),
-    prisma.metadataDefinition.count(),
     prisma.user.count(),
+    getOverview("all"),
   ]);
 
   const stats = [
-    { label: "Documents", value: totalDocs },
-    { label: "Published", value: publishedDocs },
-    { label: "Metadata fields", value: metadataFields },
-    { label: "Users", value: readers },
+    { label: "Revenue (all time)", value: formatPrice(overview.revenue, overview.currency) },
+    { label: "Purchases", value: overview.purchases.toLocaleString("en-IN") },
+    { label: "Active memberships", value: overview.activeMemberships.toLocaleString("en-IN") },
+    { label: "Views", value: overview.views.toLocaleString("en-IN") },
+    { label: "Published titles", value: `${publishedDocs} / ${totalDocs}` },
+    { label: "Users", value: readers.toLocaleString("en-IN") },
   ];
 
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-        <Link href="/admin/documents/new" className={buttonVariants({ size: "sm" })}>
-          New document
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/admin/analytics" className={buttonVariants({ variant: "outline", size: "sm" })}>
+            View analytics
+          </Link>
+          <Link href="/admin/documents/new" className={buttonVariants({ size: "sm" })}>
+            New document
+          </Link>
+        </div>
       </div>
 
-      <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         {stats.map((s) => (
           <div
             key={s.label}
@@ -42,8 +52,15 @@ export default async function AdminDashboardPage() {
       </dl>
 
       <p className="text-sm text-neutral-500">
-        Sales, revenue, memberships, and audit-log analytics arrive in later
-        steps.
+        Full revenue, conversion, and coupon breakdowns are on the{" "}
+        <Link href="/admin/analytics" className="underline">
+          analytics page
+        </Link>
+        ; the{" "}
+        <Link href="/admin/audit" className="underline">
+          audit log
+        </Link>{" "}
+        records every sensitive action.
       </p>
     </div>
   );

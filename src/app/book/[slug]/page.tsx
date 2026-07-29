@@ -9,6 +9,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { BuyButton } from "@/components/store/buy-button";
 import { BookCover } from "@/components/store/book-cover";
 import { WishlistButton } from "@/components/store/wishlist-button";
+import { ViewBeacon } from "@/components/store/view-beacon";
 import { env } from "@/lib/env";
 
 async function loadDocument(slug: string) {
@@ -89,6 +90,7 @@ export default async function BookPage({
 
   return (
     <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-10">
+      {doc.status === "PUBLISHED" && !isAdmin && <ViewBeacon documentId={doc.id} />}
       <div className="grid grid-cols-1 gap-8 sm:grid-cols-[220px_1fr]">
         {/* Cover */}
         <div className="mx-auto w-full max-w-[220px]">

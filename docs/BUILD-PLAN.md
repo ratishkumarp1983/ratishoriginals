@@ -103,9 +103,21 @@ Tell me if any deviation should be reversed.
   add/idempotent/remove and both button states, library owned + membership
   sections with dedup and the continue-reading rail. One migration
   (`add_bookmark`); tsc/lint/build green, 30 tests.
-- [ ] **Step 8 - Admin dashboard & analytics**
-  Sales, views, conversion, revenue, memberships, coupon usage; audit-log
-  viewer.
+- [x] **Step 8 - Admin dashboard & analytics** (current checkpoint)
+  Real FR-14 analytics: a `DocumentView` table (views recorded by a client
+  beacon on the book page, so link prefetches do not inflate; admin previews and
+  drafts excluded, light per-IP cap) and `UserMembership.amount` captured at
+  activation so revenue stays accurate if plan prices change. `/admin/analytics`
+  shows six KPI tiles (views, purchases, conversion, revenue = sales +
+  memberships, active memberships, coupon redemptions) with an All-time /
+  Last-30-days toggle, a per-title performance table (views / purchases /
+  conversion / revenue), and a coupon-usage table; the `/admin` dashboard now
+  carries the headline business KPIs. `/admin/audit` is a paginated, action-
+  filtered audit-log viewer. Conversion + range math are pure and unit-tested.
+  Verified live with seeded data: revenue and split, conversion %, views with
+  draft/admin exclusion and the 30-day filter, per-title and coupon tables, the
+  view rate-limit, and reader lockout (307). One migration
+  (`analytics_views_membership_amount`); tsc/lint/build green, 35 tests.
 - [ ] **Step 9 - Reviews & ratings (SRS FR-12)**
   Eligibility (purchase/membership/grant), CRUD with edit audit trail, verified
   badges, helpful votes, spoiler protection, moderation, distribution display,

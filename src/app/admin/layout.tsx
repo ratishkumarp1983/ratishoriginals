@@ -3,10 +3,12 @@ import { requireAdmin } from "@/lib/auth-helpers";
 
 const NAV = [
   { href: "/admin", label: "Dashboard" },
+  { href: "/admin/analytics", label: "Analytics" },
   { href: "/admin/documents", label: "Documents" },
   { href: "/admin/metadata", label: "Metadata fields" },
   { href: "/admin/memberships", label: "Memberships" },
   { href: "/admin/coupons", label: "Coupons" },
+  { href: "/admin/audit", label: "Audit log" },
 ];
 
 export default async function AdminLayout({

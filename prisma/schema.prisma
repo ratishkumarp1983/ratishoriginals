@@ -168,6 +168,7 @@ model Document {
   wishlistedBy        Wishlist[]
   readingProgress     ReadingProgress[]
   bookmarks           Bookmark[]
+  views               DocumentView[]
   membershipDocuments MembershipDocument[]
   coupons             Coupon[]
   pages               DocumentPage[]
@@ -275,6 +276,9 @@ model UserMembership {
   userId            String
   membershipId      String
   status            MembershipStatus @default(PENDING)
+  // Amount actually paid for this subscription period, captured at activation so
+  // revenue analytics stay accurate even if the plan's price changes later.
+  amount            Decimal?         @db.Decimal(10, 2)
   startedAt         DateTime?
   expiresAt         DateTime?
   razorpayOrderId   String?          @unique
@@ -387,6 +391,20 @@ model Bookmark {
   // One bookmark per page per reader per title; re-bookmarking a page updates it.
   @@unique([userId, documentId, page])
   @@index([userId, documentId])
+}
+
+// Storefront view events (SRS FR-14 "Views" + conversion rate). One row per
+// book-page view by a non-admin; kept minimal (no PII) and separate from the
+// audit log so high-volume view traffic never bloats the audit trail.
+model DocumentView {
+  id         String   @id @default(uuid())
+  documentId String
+  createdAt  DateTime @default(now())
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@index([createdAt])
 }
 
 // ---------------------------------------------------------------------------

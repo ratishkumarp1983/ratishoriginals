@@ -86,7 +86,7 @@ export async function createSubscriptionOrder(args: {
     const um = await prisma.userMembership.create({
       data: { userId: user.id, membershipId: membership.id, status: "PENDING" },
     });
-    await activate(um.id, membership.durationDays, user.id, null);
+    await activate(um.id, membership.durationDays, user.id, null, price);
     return { kind: "activated" };
   }
 
@@ -133,7 +133,13 @@ export async function completeMembershipByOrder(
   if (!um) return "unknown";
   if (um.status === "ACTIVE") return "already";
 
-  await activate(um.id, um.membership.durationDays, um.userId, paymentId);
+  await activate(
+    um.id,
+    um.membership.durationDays,
+    um.userId,
+    paymentId,
+    Number(um.membership.price.toString()),
+  );
   return "completed";
 }
 
@@ -142,6 +148,7 @@ async function activate(
   durationDays: number,
   userId: string,
   paymentId: string | null,
+  amount: number,
 ) {
   const now = new Date();
 
@@ -156,7 +163,7 @@ async function activate(
   await prisma.$transaction(async (tx) => {
     const updated = await tx.userMembership.updateMany({
       where: { id: userMembershipId, status: { not: "ACTIVE" } },
-      data: { status: "ACTIVE", startedAt: now, expiresAt, razorpayPaymentId: paymentId },
+      data: { status: "ACTIVE", startedAt: now, expiresAt, razorpayPaymentId: paymentId, amount },
     });
     if (updated.count === 0) return; // lost the race
     await tx.user.update({
