@@ -17,6 +17,12 @@ const schema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   APP_URL: z.string().url().default("http://localhost:3000"),
   APP_NAME: z.string().default("Ratish Originals"),
+  // Trust client-IP headers (cf-connecting-ip / x-real-ip / X-Forwarded-For)
+  // for rate limiting. Enable ONLY when the app sits behind a reverse proxy or
+  // CDN that sets a real client IP and strips any client-supplied copies.
+  // Default off so a directly-exposed instance cannot have its per-IP limits
+  // (including the login brute-force throttle) bypassed with a forged header.
+  TRUST_PROXY: bool(false),
 
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
 

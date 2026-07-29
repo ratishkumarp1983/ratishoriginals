@@ -75,13 +75,22 @@ export async function rateLimit(
 /**
  * Best-effort client IP for rate-limit keys.
  *
- * `X-Forwarded-For` is client-controllable: a caller can prepend an arbitrary
- * value to rotate their apparent IP and evade limits. So we trust proxy-set
- * headers first (`cf-connecting-ip`, `x-real-ip`), and when we fall back to XFF
- * we take the LAST hop (appended by our own trusted proxy) rather than the
- * first (spoofable) entry. Deploy behind a proxy that sets one of these.
+ * Every client-IP header (`cf-connecting-ip`, `x-real-ip`, `X-Forwarded-For`) is
+ * client-controllable when the app is directly reachable: a caller can set or
+ * rotate it to choose their own rate-limit bucket and evade per-IP limits,
+ * including the login brute-force throttle. So we trust these headers ONLY when
+ * `TRUST_PROXY` is set, which asserts the app sits behind a reverse proxy or CDN
+ * that populates a real client IP and strips any client-supplied copies. When
+ * that guarantee is absent we return a single shared key, so a forged header can
+ * never grant per-IP granularity to spread an attack across buckets.
+ *
+ * With a trusted proxy we prefer `cf-connecting-ip` / `x-real-ip`, and when we
+ * fall back to XFF we take the LAST hop (appended by our own proxy) rather than
+ * the first (spoofable) entry.
  */
 export function clientIp(headers: Headers): string {
+  if (!env.TRUST_PROXY) return "untrusted";
+
   const direct = headers.get("cf-connecting-ip") ?? headers.get("x-real-ip");
   if (direct) return direct.trim();
 
