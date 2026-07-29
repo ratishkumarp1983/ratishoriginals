@@ -4,6 +4,7 @@ import { payments } from "@/lib/adapters/payments";
 import { validateCoupon } from "@/lib/coupons";
 import { applyDiscount, toMinor } from "@/lib/pricing";
 import { audit } from "@/lib/audit";
+import { isActiveMember } from "@/lib/membership";
 import type { SessionUser } from "@/lib/auth-helpers";
 
 export class CheckoutError extends Error {}
@@ -57,7 +58,7 @@ export async function createOrder(
       code: args.couponCode,
       userId: user.id,
       documentId: document.id,
-      isMember: user.membershipStatus === "ACTIVE",
+      isMember: await isActiveMember(user.id),
     });
     if (!check.ok) throw new CheckoutError(check.error);
     couponId = check.coupon.id;

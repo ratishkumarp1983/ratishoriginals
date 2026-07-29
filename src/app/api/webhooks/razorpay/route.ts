@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { payments } from "@/lib/adapters/payments";
-import { completePurchaseByOrder } from "@/lib/purchases";
+import { completeOrder } from "@/lib/orders";
 import { audit } from "@/lib/audit";
 
 /**
@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     event.orderId &&
     event.paymentId
   ) {
-    const outcome = await completePurchaseByOrder(event.orderId, event.paymentId);
+    const outcome = await completeOrder(event.orderId, event.paymentId);
     await audit({
       action: "PAYMENT_WEBHOOK",
       targetType: "Purchase",

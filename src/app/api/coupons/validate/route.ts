@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth-helpers";
 import { validateCoupon } from "@/lib/coupons";
+import { isActiveMember } from "@/lib/membership";
 import { applyDiscount } from "@/lib/pricing";
 import { couponPreviewSchema } from "@/lib/validation/checkout";
 import { rateLimit } from "@/lib/rate-limit";
@@ -34,7 +35,7 @@ export async function POST(req: Request) {
     code: parsed.data.code,
     userId: user.id,
     documentId: doc.id,
-    isMember: user.membershipStatus === "ACTIVE",
+    isMember: await isActiveMember(user.id),
   });
   if (!check.ok) return NextResponse.json({ ok: false, error: check.error });
 

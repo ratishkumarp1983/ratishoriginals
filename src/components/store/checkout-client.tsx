@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatPrice, isFree } from "@/lib/format";
+import { loadRazorpay } from "@/lib/razorpay-loader";
 
 interface Props {
   documentId: string;
@@ -17,26 +18,6 @@ interface Props {
   hasCover: boolean;
   driver: string;
   appName: string;
-}
-
-interface RazorpayOptions {
-  key: string;
-  order_id: string;
-  amount: number;
-  currency: string;
-  name: string;
-  description: string;
-  handler: (r: {
-    razorpay_order_id: string;
-    razorpay_payment_id: string;
-    razorpay_signature: string;
-  }) => void;
-  modal?: { ondismiss?: () => void };
-}
-declare global {
-  interface Window {
-    Razorpay?: new (options: RazorpayOptions) => { open: () => void };
-  }
 }
 
 export function CheckoutClient(props: Props) {
@@ -253,18 +234,4 @@ export function CheckoutClient(props: Props) {
       </div>
     </div>
   );
-}
-
-let razorpayPromise: Promise<void> | null = null;
-function loadRazorpay(): Promise<void> {
-  if (razorpayPromise) return razorpayPromise;
-  razorpayPromise = new Promise((resolve, reject) => {
-    if (window.Razorpay) return resolve();
-    const s = document.createElement("script");
-    s.src = "https://checkout.razorpay.com/v1/checkout.js";
-    s.onload = () => resolve();
-    s.onerror = () => reject(new Error("Razorpay failed to load"));
-    document.body.appendChild(s);
-  });
-  return razorpayPromise;
 }

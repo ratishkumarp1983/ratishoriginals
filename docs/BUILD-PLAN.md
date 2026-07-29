@@ -72,9 +72,21 @@ Tell me if any deviation should be reversed.
   usedCount despite a double completion; webhook completes on valid signature
   and 400s on bad; every coupon rule (expired/members/one-time/limit/bad code)
   rejects correctly. 25 tests, build/lint/typecheck green.
-- [ ] **Step 6 - Memberships**
-  Plan config, subscribe (Razorpay), status lifecycle (ACTIVE/EXPIRED/PENDING),
-  member-only content, member discounts.
+- [x] **Step 6 - Memberships** (current checkpoint)
+  Admin plan CRUD (`/admin/memberships`) with member-only title assignment;
+  public `/membership` page; subscribe flow reusing the payment adapter
+  (order -> pay -> activate) through the unified `completeOrder` dispatcher so
+  purchases and subscriptions share one idempotent verify/webhook/mock path.
+  Status lifecycle ACTIVE/EXPIRED/PENDING with lazy expiry (no cron): reads
+  downgrade lapsed rows and sync the denormalized User.membershipStatus. New
+  periods append to remaining time (early renewals never lose days). Member-only
+  content grants full read access via MembershipDocument (no purchase needed);
+  member checks are DB-authoritative so member-only coupons work the moment a
+  subscription activates. Account + header surface membership state.
+  Verified end-to-end via curl: subscribe -> ACTIVE (365 days), single
+  activation despite double-complete; member-only 403 -> assign -> 200 with zero
+  purchases; member coupon applies once active; forced expiry lazily downgrades
+  to EXPIRED and revokes access + the coupon. 25 tests, build/lint/typecheck green.
 - [ ] **Step 7 - Reader library & progress**
   Library (purchased + membership), reading history, continue reading, progress
   (last page / completion %), wishlist.

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth-helpers";
 import { payments } from "@/lib/adapters/payments";
-import { completePurchaseByOrder } from "@/lib/purchases";
+import { completeOrder } from "@/lib/orders";
 import { verifySchema } from "@/lib/validation/checkout";
 
 /**
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Payment verification failed." }, { status: 400 });
   }
 
-  const outcome = await completePurchaseByOrder(
+  const outcome = await completeOrder(
     parsed.data.orderId,
     parsed.data.paymentId,
   );

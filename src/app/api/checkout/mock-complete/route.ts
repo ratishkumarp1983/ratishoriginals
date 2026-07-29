@@ -1,11 +1,10 @@
 import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { env } from "@/lib/env";
 import { getCurrentUser } from "@/lib/auth-helpers";
 import { payments } from "@/lib/adapters/payments";
 import { mockSignature } from "@/lib/adapters/payments/mock";
-import { completePurchaseByOrder } from "@/lib/purchases";
+import { completeOrder, findOrderOwner } from "@/lib/orders";
 
 /**
  * Dev-only: simulate a successful capture on the mock gateway. It generates a
@@ -24,11 +23,8 @@ export async function POST(req: Request) {
   const orderId = typeof body?.orderId === "string" ? body.orderId : "";
   if (!orderId) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
-  const purchase = await prisma.purchase.findUnique({
-    where: { razorpayOrderId: orderId },
-    select: { userId: true },
-  });
-  if (!purchase || purchase.userId !== user.id) {
+  const ownerId = await findOrderOwner(orderId);
+  if (ownerId !== user.id) {
     return NextResponse.json({ error: "Order not found." }, { status: 404 });
   }
 
@@ -38,6 +34,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Verification failed." }, { status: 400 });
   }
 
-  await completePurchaseByOrder(orderId, paymentId);
+  await completeOrder(orderId, paymentId);
   return NextResponse.json({ ok: true });
 }

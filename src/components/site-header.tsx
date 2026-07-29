@@ -20,6 +20,12 @@ export async function SiteHeader() {
           >
             Browse
           </Link>
+          <Link
+            href="/membership"
+            className="text-sm text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
+          >
+            Membership
+          </Link>
         </div>
         <nav className="flex items-center gap-2">
           {user ? (

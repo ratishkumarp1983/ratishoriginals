@@ -1,10 +1,23 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { requireUser } from "@/lib/auth-helpers";
+import { getActiveMembership } from "@/lib/membership";
+import { buttonVariants } from "@/components/ui/button";
 
 export const metadata: Metadata = { title: "Account" };
+export const dynamic = "force-dynamic";
 
 export default async function AccountPage() {
   const user = await requireUser("/account");
+  const membership = await getActiveMembership(user.id);
+
+  const membershipValue = membership
+    ? `${membership.membership.name}${
+        membership.expiresAt
+          ? ` (until ${membership.expiresAt.toISOString().slice(0, 10)})`
+          : ""
+      }`
+    : "Not a member";
 
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-12">
@@ -13,8 +26,13 @@ export default async function AccountPage() {
         <Row label="Name" value={user.name ?? "-"} />
         <Row label="Email" value={user.email} />
         <Row label="Role" value={user.role} />
-        <Row label="Membership" value={user.membershipStatus} />
+        <Row label="Membership" value={membershipValue} />
       </dl>
+      {!membership && (
+        <Link href="/membership" className={buttonVariants({ className: "mt-6" })}>
+          Become a premium reader
+        </Link>
+      )}
     </main>
   );
 }
