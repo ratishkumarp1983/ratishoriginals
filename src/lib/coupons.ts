@@ -46,14 +46,14 @@ export async function validateCoupon(ctx: CouponContext): Promise<CouponCheck> {
     return { ok: false, error: "This coupon is for members only." };
   }
 
-  if (coupon.oneTimePerUser) {
-    const prior = await prisma.couponRedemption.findFirst({
-      where: { couponId: coupon.id, userId: ctx.userId },
-      select: { id: true },
-    });
-    if (prior) {
-      return { ok: false, error: "You have already used this coupon." };
-    }
+  // A coupon can be redeemed at most once per user (enforced at the DB too), so
+  // reject a prior redemption regardless of the one-time flag.
+  const prior = await prisma.couponRedemption.findFirst({
+    where: { couponId: coupon.id, userId: ctx.userId },
+    select: { id: true },
+  });
+  if (prior) {
+    return { ok: false, error: "You have already used this coupon." };
   }
 
   return { ok: true, coupon };

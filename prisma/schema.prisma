@@ -76,6 +76,8 @@ model User {
   emailVerified    DateTime?
   mfaSecret        String? // admin MFA (TOTP), enabled in a later step
   mfaEnabled       Boolean          @default(false)
+  // Bumped on password reset to invalidate previously-issued JWTs.
+  tokenVersion     Int              @default(0)
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
@@ -242,6 +244,10 @@ model Purchase {
   reviews    Review[]
   couponUses CouponRedemption[]
 
+  // One purchase row per user+document. The checkout upserts it, so a user can
+  // never end up with two purchases (or two orders) for the same title. This is
+  // the hard guarantee behind "lifetime access, bought once".
+  @@unique([userId, documentId])
   @@index([userId])
   @@index([documentId])
   @@index([status])
@@ -324,6 +330,9 @@ model CouponRedemption {
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   purchase Purchase? @relation(fields: [purchaseId], references: [id])
 
+  // A coupon can be redeemed at most once per user. This is the DB backstop for
+  // one-time-per-user; the checkout also reserves against in-flight orders.
+  @@unique([couponId, userId])
   @@index([couponId])
   @@index([userId])
 }

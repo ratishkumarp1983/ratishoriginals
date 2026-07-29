@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/password";
 import { loginSchema } from "@/lib/validation/auth";
 import { env, isGoogleEnabled } from "@/lib/env";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 import type { MembershipStatus, Role } from "@prisma/client";
 
 /**
@@ -25,10 +26,16 @@ const providers: NextAuthConfig["providers"] = [
       email: { label: "Email", type: "email" },
       password: { label: "Password", type: "password" },
     },
-    async authorize(raw) {
+    async authorize(raw, request) {
       const parsed = loginSchema.safeParse(raw);
       if (!parsed.success) return null;
       const { email, password } = parsed.data;
+
+      // Throttle credential stuffing: cap attempts per IP and per account.
+      const ip = clientIp(new Headers(request?.headers as HeadersInit));
+      const byIp = await rateLimit(`login-ip:${ip}`, 15, 60_000);
+      const byEmail = await rateLimit(`login-email:${email}`, 8, 5 * 60_000);
+      if (!byIp.success || !byEmail.success) return null;
 
       const user = await prisma.user.findUnique({ where: { email } });
       if (!user || !user.passwordHash) return null;
@@ -43,6 +50,7 @@ const providers: NextAuthConfig["providers"] = [
         image: user.image,
         role: user.role,
         membershipStatus: user.membershipStatus,
+        tokenVersion: user.tokenVersion,
       };
     },
   }),
@@ -67,7 +75,7 @@ export const authConfig: NextAuthConfig = {
   },
   providers,
   callbacks: {
-    async jwt({ token, user, trigger }) {
+    async jwt({ token, user }) {
       // On sign-in, copy identity/authorization claims into the token.
       if (user) {
         token.uid = user.id;
@@ -75,16 +83,25 @@ export const authConfig: NextAuthConfig = {
         token.membershipStatus =
           (user as { membershipStatus?: MembershipStatus }).membershipStatus ??
           "NONE";
+        token.tv = (user as { tokenVersion?: number }).tokenVersion ?? 0;
+        return token;
       }
-      // Allow a session refresh to re-read role/membership from the DB.
-      if (trigger === "update" && token.uid) {
-        const fresh = await prisma.user.findUnique({
-          where: { id: token.uid as string },
-          select: { role: true, membershipStatus: true },
-        });
-        if (fresh) {
+
+      // On every subsequent request, re-read the user so that role and
+      // membership stay current, and a password reset (which bumps
+      // tokenVersion) invalidates previously-issued tokens.
+      if (token.uid) {
+        try {
+          const fresh = await prisma.user.findUnique({
+            where: { id: token.uid as string },
+            select: { role: true, membershipStatus: true, tokenVersion: true },
+          });
+          if (!fresh) return null; // user deleted
+          if ((token.tv ?? 0) !== fresh.tokenVersion) return null; // revoked
           token.role = fresh.role;
           token.membershipStatus = fresh.membershipStatus;
+        } catch {
+          // Keep the existing token on a transient DB error (fail open).
         }
       }
       return token;

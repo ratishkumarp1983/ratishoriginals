@@ -35,29 +35,29 @@ export async function POST(req: Request) {
     );
   }
 
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    // Do not reveal whether an email is registered.
-    return NextResponse.json(
-      { error: "Unable to register with those details." },
-      { status: 409 },
-    );
-  }
-
+  // Always hash (equalises timing) and never disclose whether the email already
+  // exists: identical response and status in both cases, so registration cannot
+  // be used to enumerate accounts.
   const passwordHash = await hashPassword(password);
-  const user = await prisma.user.create({
-    data: { name, email, passwordHash, role: "READER" },
-    select: { id: true, email: true },
+  const existing = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true },
   });
 
-  await audit({
-    action: "USER_REGISTER",
-    actorId: user.id,
-    targetType: "User",
-    targetId: user.id,
-    ip,
-    userAgent: req.headers.get("user-agent"),
-  });
+  if (!existing) {
+    const user = await prisma.user.create({
+      data: { name, email, passwordHash, role: "READER" },
+      select: { id: true },
+    });
+    await audit({
+      action: "USER_REGISTER",
+      actorId: user.id,
+      targetType: "User",
+      targetId: user.id,
+      ip,
+      userAgent: req.headers.get("user-agent"),
+    });
+  }
 
   return NextResponse.json({ ok: true }, { status: 201 });
 }

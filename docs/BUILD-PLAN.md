@@ -120,6 +120,32 @@ public surface was rebranded to a premium author-brand look:
 - Legal page stubs (terms / privacy / refund) so footer links resolve; real
   content lands in Step 10.
 
+### External adversarial security + QA audit (post Step 6 / brand home)
+
+An external adversarial reviewer audited the revenue path. Confirmed sound:
+server-computed amounts, verified payment/webhook signatures, per-order
+idempotency, entitlement + signed-URL boundary, admin authz, input validation
+(no 500s), no stored-XSS, no client secret leakage. Findings fixed and
+re-verified live:
+
+- HIGH: coupon usage-limit / one-time / already-owned bypass (create-vs-complete
+  TOCTOU). Fixed with DB uniques (`Purchase(userId,documentId)`,
+  `CouponRedemption(couponId,userId)`), an upsert-per-title checkout, and a
+  coupon reservation that counts in-flight orders. Reproduced the exact exploit:
+  now 1 purchase / usedCount 1 / 1 redemption (was 3/3/3).
+- MED: no login throttle -> per-IP + per-account rate limit in `authorize`
+  (correct password refused after repeated failures).
+- MED: password reset did not invalidate JWTs (JWT strategy) -> `User.tokenVersion`
+  bumped on reset and checked every request (also refreshes role/membership).
+- MED: registration enumerated via status code -> identical 201 + equalised
+  timing.
+- MED: `X-Forwarded-For` spoofing defeated IP limits -> trust proxy-set headers,
+  else take the last hop.
+- Security headers added (`next.config.ts`): nosniff, frame DENY, referrer,
+  permissions-policy, HSTS, and a production CSP.
+
+See `docs/EXTERNAL-REVIEW-PROMPT.md` for the reusable audit brief.
+
 ### Step 3 review round (independent reviewer + QA)
 
 After Step 3, an independent code review and an adversarial QA pass ran. All

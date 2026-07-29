@@ -72,9 +72,23 @@ export async function rateLimit(
   };
 }
 
-/** Best-effort client IP from standard proxy headers. */
+/**
+ * Best-effort client IP for rate-limit keys.
+ *
+ * `X-Forwarded-For` is client-controllable: a caller can prepend an arbitrary
+ * value to rotate their apparent IP and evade limits. So we trust proxy-set
+ * headers first (`cf-connecting-ip`, `x-real-ip`), and when we fall back to XFF
+ * we take the LAST hop (appended by our own trusted proxy) rather than the
+ * first (spoofable) entry. Deploy behind a proxy that sets one of these.
+ */
 export function clientIp(headers: Headers): string {
+  const direct = headers.get("cf-connecting-ip") ?? headers.get("x-real-ip");
+  if (direct) return direct.trim();
+
   const xff = headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0]!.trim();
-  return headers.get("x-real-ip") ?? "unknown";
+  if (xff) {
+    const hops = xff.split(",").map((h) => h.trim()).filter(Boolean);
+    if (hops.length) return hops[hops.length - 1]!;
+  }
+  return "unknown";
 }

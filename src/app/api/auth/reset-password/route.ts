@@ -51,12 +51,15 @@ export async function POST(req: Request) {
 
   const passwordHash = await hashPassword(password);
   await prisma.$transaction([
-    prisma.user.update({ where: { id: user.id }, data: { passwordHash } }),
+    // Bumping tokenVersion invalidates every JWT issued before the reset (the
+    // app uses JWT sessions, so there are no DB session rows to delete).
+    prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash, tokenVersion: { increment: 1 } },
+    }),
     prisma.verificationToken.deleteMany({
       where: { identifier: record.identifier },
     }),
-    // Invalidate existing sessions after a password change.
-    prisma.session.deleteMany({ where: { userId: user.id } }),
   ]);
 
   await audit({

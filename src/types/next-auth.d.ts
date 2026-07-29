@@ -21,5 +21,6 @@ declare module "next-auth/jwt" {
     uid?: string;
     role?: Role;
     membershipStatus?: MembershipStatus;
+    tv?: number;
   }
 }
