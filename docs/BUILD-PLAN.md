@@ -23,10 +23,16 @@ Tell me if any deviation should be reversed.
   future-marketplace tables); adapter layer (storage/payments/scan/email);
   env validation; docker-compose (Postgres+Redis); seed (admin/metadata/
   membership); Vitest; docs. Build + typecheck + tests green.
-- [ ] **Step 2 — Authentication**
-  Auth.js v5: Google OAuth + email/password (Argon2id), registration, password
-  reset (email adapter), session management, secure cookies, CSRF; role guard;
-  admin bootstrap. Turnstile hook (bypassed until keys set).
+- [x] **Step 2 — Authentication** ✅ *(current checkpoint)*
+  Auth.js v5 (JWT sessions): Google OAuth (conditional) + email/password
+  (Argon2id) via Credentials; registration API; password reset (request +
+  single-use hashed token + completion, via the email adapter); role/membership
+  carried in the session; server-side guards (`requireUser`/`requireAdmin`) as
+  the enforcement boundary + coarse middleware redirect; rate limiting +
+  Turnstile hook (bypassed until keys set); auth UI (login/register/forgot/
+  reset) with shadcn/ui. Build + typecheck + lint + 10 tests green; full flow
+  (register → auto-login → guarded pages → admin role → logout → reset) verified
+  in-browser against Postgres.
 - [ ] **Step 3 — Documents & dynamic metadata (admin)**
   Admin upload pipeline (validate → scan → store → extract pages → thumbnail →
   metadata → publish); dynamic metadata field CRUD; document CRUD; slugs/SEO.

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Scriptory is a single Next.js 16 (App Router) application: Server Components and
+Ratish Originals is a single Next.js 16 (App Router) application: Server Components and
 Route Handlers on the server, a thin React client for interactivity. Prisma
 talks to PostgreSQL. All external I/O (storage, payments, virus scan, email)
 goes through **adapters** so the platform runs locally with zero paid

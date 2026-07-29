@@ -1,4 +1,4 @@
-# Scriptory (RatishOriginals)
+# Ratish Originals (RatishOriginals)
 
 A premium, secure digital publishing and reading platform. An author publishes,
 protects, markets, and monetises written works through an online reading
@@ -55,7 +55,7 @@ npm run db:seed
 npm run dev                 # http://localhost:3000
 ```
 
-Default admin (from `.env`): `admin@scriptory.local` / `ChangeMe-Admin-123456`.
+Default admin (from `.env`): `admin@ratishoriginals.local` / `ChangeMe-Admin-123456`.
 
 ## Scripts
 

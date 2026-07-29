@@ -16,7 +16,7 @@ const bool = (def: boolean) =>
 const schema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   APP_URL: z.string().url().default("http://localhost:3000"),
-  APP_NAME: z.string().default("Scriptory"),
+  APP_NAME: z.string().default("Ratish Originals"),
 
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
 
@@ -45,7 +45,7 @@ const schema = z.object({
   CLAMAV_PORT: z.coerce.number().int().positive().default(3310),
 
   EMAIL_DRIVER: z.enum(["console", "resend"]).default("console"),
-  EMAIL_FROM: z.string().default("Scriptory <no-reply@localhost>"),
+  EMAIL_FROM: z.string().default("Ratish Originals <no-reply@localhost>"),
   RESEND_API_KEY: z.string().optional().default(""),
 
   REDIS_URL: z.string().optional().default(""),
@@ -55,7 +55,7 @@ const schema = z.object({
 
   SENTRY_DSN: z.string().optional().default(""),
 
-  ADMIN_EMAIL: z.string().email().default("admin@scriptory.local"),
+  ADMIN_EMAIL: z.string().email().default("admin@ratishoriginals.local"),
   ADMIN_PASSWORD: z.string().min(12).default("ChangeMe-Admin-123456"),
 });
 

@@ -29,7 +29,6 @@ export async function audit(input: AuditInput): Promise<void> {
       },
     });
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.error("[audit] failed to record", input.action, err);
   }
 }

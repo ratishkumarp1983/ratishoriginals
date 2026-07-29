@@ -3,6 +3,6 @@
 const e = process.env as Record<string, string | undefined>;
 e.NODE_ENV ??= "test";
 e.DATABASE_URL ??=
-  "postgresql://scriptory:scriptory@localhost:5432/scriptory?schema=public";
+  "postgresql://ratishoriginals:ratishoriginals@localhost:5544/ratishoriginals?schema=public";
 e.AUTH_SECRET ??= "test-secret-0123456789abcdef";
 e.APP_URL ??= "http://localhost:3000";

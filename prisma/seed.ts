@@ -29,7 +29,7 @@ const METADATA_FIELDS: {
 ];
 
 async function main() {
-  const adminEmail = process.env.ADMIN_EMAIL ?? "admin@scriptory.local";
+  const adminEmail = process.env.ADMIN_EMAIL ?? "admin@ratishoriginals.local";
   const adminPassword = process.env.ADMIN_PASSWORD ?? "ChangeMe-Admin-123456";
 
   const passwordHash = await hash(adminPassword, {

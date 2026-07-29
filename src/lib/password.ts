@@ -1,5 +1,7 @@
 import { hash, verify } from "@node-rs/argon2";
 
+export { PASSWORD_MIN_LENGTH } from "@/lib/auth-constants";
+
 /**
  * Password hashing with Argon2id (SRS §8). @node-rs/argon2 ships prebuilt
  * native binaries, so there is no compiler toolchain requirement on Windows.
@@ -28,5 +30,3 @@ export async function verifyPassword(
     return false;
   }
 }
-
-export const PASSWORD_MIN_LENGTH = 12;

@@ -20,7 +20,6 @@ export interface EmailAdapter {
 class ConsoleEmailAdapter implements EmailAdapter {
   readonly name = "console";
   async send(msg: EmailMessage): Promise<void> {
-    // eslint-disable-next-line no-console
     console.info(
       `\n[email:console] to=${msg.to} subject="${msg.subject}"\n${msg.text ?? msg.html}\n`,
     );
