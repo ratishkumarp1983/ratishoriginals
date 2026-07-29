@@ -14,10 +14,15 @@ export default async function AuditLogPage({
 }) {
   const sp = await searchParams;
   const action = sp.action && sp.action !== "all" ? sp.action : null;
-  const page = Math.max(1, Number(sp.page) || 1);
   const where = action ? { action } : {};
 
-  const [rows, total, actionGroups] = await Promise.all([
+  const total = await prisma.auditLog.count({ where });
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  // Clamp the requested page into range so an out-of-range ?page shows the last
+  // page instead of an empty table.
+  const page = Math.min(Math.max(1, Number(sp.page) || 1), pages);
+
+  const [rows, actionGroups] = await Promise.all([
     prisma.auditLog.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -34,11 +39,8 @@ export default async function AuditLogPage({
         actor: { select: { email: true } },
       },
     }),
-    prisma.auditLog.count({ where }),
     prisma.auditLog.groupBy({ by: ["action"], _count: { _all: true }, orderBy: { action: "asc" } }),
   ]);
-
-  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const qs = (p: number) =>
     `/admin/audit?page=${p}${action ? `&action=${encodeURIComponent(action)}` : ""}`;
 

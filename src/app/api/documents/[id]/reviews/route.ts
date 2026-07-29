@@ -42,8 +42,9 @@ export async function POST(
   }
   const { rating, title, review, containsSpoiler } = parsed.data;
 
+  const key = { userId_documentId: { userId: user.id, documentId: doc.id } };
   const existing = await prisma.review.findUnique({
-    where: { userId_documentId: { userId: user.id, documentId: doc.id } },
+    where: key,
     select: { id: true, rating: true, title: true, review: true },
   });
 
@@ -57,40 +58,63 @@ export async function POST(
     purchaseId: eligibility.purchaseId,
   };
 
-  if (existing) {
+  // Snapshot the prior version into ReviewEdit, then overwrite (the edit trail).
+  const applyEdit = async (prev: {
+    id: string;
+    rating: number;
+    title: string | null;
+    review: string;
+  }) => {
     await prisma.$transaction([
       prisma.reviewEdit.create({
         data: {
-          reviewId: existing.id,
-          previousRating: existing.rating,
-          previousTitle: existing.title,
-          previousReview: existing.review,
+          reviewId: prev.id,
+          previousRating: prev.rating,
+          previousTitle: prev.title,
+          previousReview: prev.review,
         },
       }),
-      prisma.review.update({ where: { id: existing.id }, data }),
+      prisma.review.update({ where: { id: prev.id }, data }),
     ]);
     await audit({
       action: "REVIEW_EDIT",
       actorId: user.id,
       targetType: "Review",
-      targetId: existing.id,
+      targetId: prev.id,
       metadata: { documentId: doc.id, rating },
     });
+  };
+
+  if (existing) {
+    await applyEdit(existing);
     return NextResponse.json({ ok: true, updated: true });
   }
 
-  const created = await prisma.review.create({
-    data: { userId: user.id, documentId: doc.id, ...data },
-    select: { id: true },
-  });
-  await audit({
-    action: "REVIEW_CREATE",
-    actorId: user.id,
-    targetType: "Review",
-    targetId: created.id,
-    metadata: { documentId: doc.id, rating },
-  });
-  return NextResponse.json({ ok: true, updated: false });
+  try {
+    const created = await prisma.review.create({
+      data: { userId: user.id, documentId: doc.id, ...data },
+      select: { id: true },
+    });
+    await audit({
+      action: "REVIEW_CREATE",
+      actorId: user.id,
+      targetType: "Review",
+      targetId: created.id,
+      metadata: { documentId: doc.id, rating },
+    });
+    return NextResponse.json({ ok: true, updated: false });
+  } catch (err) {
+    // A concurrent first review won the unique (userId, documentId) race; apply
+    // ours as an edit instead of surfacing a raw P2002 as a 500.
+    if ((err as { code?: string }).code !== "P2002") throw err;
+    const now = await prisma.review.findUnique({
+      where: key,
+      select: { id: true, rating: true, title: true, review: true },
+    });
+    if (!now) throw err;
+    await applyEdit(now);
+    return NextResponse.json({ ok: true, updated: true });
+  }
 }
 
 /** Delete the caller's own review (its votes and edit history cascade). */
