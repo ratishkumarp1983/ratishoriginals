@@ -47,6 +47,17 @@ export type CreateOrderResult =
  * settled redemptions and fresh in-flight orders as consuming a slot, which
  * closes the create-then-complete gap that let one user redeem a capped or
  * one-time coupon repeatedly.
+ *
+ * Accepted residual (by design): this reservation is a check-then-act count, so
+ * two checkouts fired by the same user in the same sub-millisecond window can
+ * both pass and each open a discounted order on a different title. Completion
+ * deliberately never rolls a captured payment back (see completePurchaseByOrder),
+ * so both paid orders are honored and the usedCount ledger stays capped; only
+ * the number of granted discounts can drift one past the limit under that race,
+ * and the customer still pays the discounted price on each. Do NOT "fix" this by
+ * refusing the second completion - that reintroduces the stranded captured
+ * payment bug (N-1). If it ever needs closing, serialize with an atomic
+ * (couponId, userId) reservation, never a rollback.
  */
 async function reserveCoupon(coupon: Coupon, userId: string, documentId: string) {
   const cutoff = new Date(Date.now() - RESERVATION_WINDOW_MS);

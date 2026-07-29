@@ -189,6 +189,12 @@ export function CouponManager({
         <label className="flex items-center gap-2 text-sm">
           <Switch checked={memberOnly} onCheckedChange={setMemberOnly} /> Members only
         </label>
+        <p className="sm:col-span-2 text-xs text-muted-foreground">
+          Each coupon is limited to one redemption per reader, enforced in the
+          database. In the rare case a reader opens two checkouts at the exact
+          same instant, the discount can apply to one extra paid order beyond the
+          limit; the reader still pays the discounted price on each.
+        </p>
         <div className="sm:col-span-2">
           <Button type="submit" disabled={creating || !code || !value}>
             {creating ? "Creating..." : "Create coupon"}
