@@ -43,7 +43,7 @@ export default async function Home() {
               <br />
               <span className="text-brand-gold">Stories that stay.</span>
             </h1>
-            <p className="mt-5 max-w-md text-lg text-brand-cream/75">
+            <p className="mt-5 max-w-md text-lg text-brand-cream/85">
               Practical original books on leadership, technology, AI, and human
               potential by Ratish Kumar.
             </p>
@@ -72,7 +72,7 @@ export default async function Home() {
                   className="aspect-[3/4] rounded-lg shadow-2xl ring-1 ring-white/10"
                   titleClass="text-2xl"
                 />
-                <p className="mt-3 text-center text-sm text-brand-cream/60">
+                <p className="mt-3 text-center text-sm text-brand-cream/75">
                   Featured: {flagship.title}
                 </p>
               </Link>
@@ -96,7 +96,7 @@ export default async function Home() {
                 </span>
                 <div>
                   <p className="text-sm font-medium text-brand-ink">{t.title}</p>
-                  <p className="text-xs text-brand-ink/55">{t.note}</p>
+                  <p className="text-[13px] text-brand-ink/70">{t.note}</p>
                 </div>
               </div>
             ))}
@@ -136,7 +136,7 @@ export default async function Home() {
               <Crown className="mt-1 h-8 w-8 text-brand-gold" strokeWidth={1.5} />
               <div>
                 <h2 className="font-display text-2xl font-semibold text-white">Become a premium reader</h2>
-                <p className="mt-1 max-w-xl text-brand-cream/70">
+                <p className="mt-1 max-w-xl text-brand-cream/80">
                   Member-only titles, member discounts, and early access to new
                   releases from {formatPrice(plan.price, plan.currency)} per year.
                 </p>
@@ -158,7 +158,7 @@ export default async function Home() {
           <div>
             <p className="text-xs font-medium uppercase tracking-widest text-brand-gold">About the author</p>
             <h2 className="mt-1 font-display text-2xl font-semibold text-brand-ink">Ratish Kumar</h2>
-            <p className="mt-1 text-sm text-brand-ink/60">Author, entrepreneur, and AI educator</p>
+            <p className="mt-1 text-sm text-brand-ink/70">Author, entrepreneur, and AI educator</p>
             <p className="mt-4 max-w-xl text-brand-ink/80">
               Ratish writes practical books on leadership, technology, and human
               potential, distilling hard-won lessons into ideas you can act on.

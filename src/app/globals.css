@@ -7,10 +7,11 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
-  --font-display: var(--font-playfair), Georgia, serif;
+  --font-heading: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
   /* Ratish Originals brand palette (fixed, not light/dark adaptive) */
   --color-brand-navy: #0e1c2b;
   --color-brand-navy-2: #16293b;
@@ -131,10 +132,14 @@
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
   html {
     @apply font-sans;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    line-height: 1.6;
   }
 }

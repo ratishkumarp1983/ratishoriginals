@@ -14,7 +14,7 @@ export function UserMenu({
   isAdmin: boolean;
 }) {
   const link =
-    "text-sm text-brand-cream/80 transition-colors hover:text-white";
+    "text-sm text-brand-cream/90 transition-colors hover:text-white";
   return (
     <div className="flex items-center gap-4">
       {isAdmin && (
@@ -26,7 +26,7 @@ export function UserMenu({
         Library
       </Link>
       <span
-        className="hidden text-sm text-brand-cream/50 sm:inline"
+        className="hidden text-sm text-brand-cream/70 sm:inline"
         title={email}
       >
         {name || email}

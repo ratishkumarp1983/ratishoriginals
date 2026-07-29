@@ -19,7 +19,7 @@ export async function SiteHeader() {
             <span className="font-display text-xl font-semibold tracking-wide text-white">
               Ratish Originals
             </span>
-            <span className="mt-0.5 text-[10px] uppercase tracking-[0.22em] text-brand-gold">
+            <span className="mt-0.5 text-[11px] font-medium uppercase tracking-[0.18em] text-brand-gold">
               Stories. Ideas. Impact.
             </span>
           </Link>
@@ -28,7 +28,7 @@ export async function SiteHeader() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="text-brand-cream/75 transition-colors hover:text-white"
+                className="text-brand-cream/85 transition-colors hover:text-white"
               >
                 {item.label}
               </Link>

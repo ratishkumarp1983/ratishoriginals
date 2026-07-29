@@ -44,7 +44,7 @@ export function BookCover({
       className={`relative flex flex-col justify-between overflow-hidden ${className}`}
       style={{ backgroundColor: bg }}
     >
-      <span className="p-4 text-[10px] uppercase tracking-[0.18em] text-brand-gold/80">
+      <span className="p-4 text-[11px] font-medium uppercase tracking-[0.15em] text-brand-gold">
         Ratish Originals
       </span>
       <div className="px-4 pb-5">

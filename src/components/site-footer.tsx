@@ -34,7 +34,7 @@ export function SiteFooter() {
           <p className="font-display text-lg font-semibold text-white">
             Ratish Originals
           </p>
-          <p className="text-sm text-brand-cream/60">
+          <p className="text-sm text-brand-cream/75">
             A home for ideas that challenge, inspire, and create impact.
           </p>
         </div>
@@ -48,7 +48,7 @@ export function SiteFooter() {
                 <li key={l.href}>
                   <Link
                     href={l.href}
-                    className="text-brand-cream/70 transition-colors hover:text-white"
+                    className="text-brand-cream/80 transition-colors hover:text-white"
                   >
                     {l.label}
                   </Link>
@@ -59,7 +59,7 @@ export function SiteFooter() {
         ))}
       </div>
       <div className="border-t border-white/10">
-        <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-2 px-6 py-5 text-xs text-brand-cream/50 sm:flex-row">
+        <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-2 px-6 py-5 text-xs text-brand-cream/65 sm:flex-row">
           <span>© {year} Ratish Originals. All rights reserved.</span>
           <span>Secure payments powered by Razorpay</span>
         </div>
