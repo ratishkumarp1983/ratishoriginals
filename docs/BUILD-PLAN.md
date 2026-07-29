@@ -33,9 +33,16 @@ Tell me if any deviation should be reversed.
   reset) with shadcn/ui. Build + typecheck + lint + 10 tests green; full flow
   (register → auto-login → guarded pages → admin role → logout → reset) verified
   in-browser against Postgres.
-- [ ] **Step 3 — Documents & dynamic metadata (admin)**
-  Admin upload pipeline (validate → scan → store → extract pages → thumbnail →
-  metadata → publish); dynamic metadata field CRUD; document CRUD; slugs/SEO.
+- [x] **Step 3 — Documents & dynamic metadata (admin)** ✅ *(current checkpoint)*
+  Upload pipeline (validate → virus scan → convert-to-PDF → sample generation →
+  store) via a new conversion adapter (PDF passthrough; LibreOffice driver for
+  DOC/DOCX/TXT/RTF behind `CONVERT_DRIVER`); document create/edit/delete with
+  storage rollback; dynamic metadata-field CRUD; unique slugs + SEO fields;
+  protected `/api/files` (signed-token) + public cover route; admin UI
+  (dashboard, documents list, create/edit form, metadata manager). Verified
+  end-to-end: real 12-page PDF uploaded via authed multipart → pageCount=12,
+  sample clamped to 4 pages, files stored, metadata linked, audit logged;
+  auth boundary (401 anon / 403 reader); 15 tests, build/lint/typecheck green.
 - [ ] **Step 4 — Storefront & protected reader**
   Public catalog, search, document pages (metadata visibility rule), sample
   reading (configurable `samplePages`), protected paginated reader with

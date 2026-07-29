@@ -48,3 +48,16 @@ export async function requireAdmin(): Promise<SessionUser> {
   if (user.role !== "ADMIN") redirect("/");
   return user;
 }
+
+/**
+ * API-route variant: returns the admin user, or an error describing the HTTP
+ * status to return. Never redirects (route handlers must send JSON).
+ */
+export async function getAdminForApi(): Promise<
+  { user: SessionUser } | { error: 401 | 403 }
+> {
+  const user = await getCurrentUser();
+  if (!user) return { error: 401 };
+  if (user.role !== "ADMIN") return { error: 403 };
+  return { user };
+}

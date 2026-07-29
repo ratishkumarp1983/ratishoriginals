@@ -15,6 +15,7 @@ Browser
       → StorageAdapter  (local disk | Cloudflare R2)
       → PaymentsAdapter (mock | Razorpay)
       → ScanAdapter     (stub | ClamAV)
+      → ConvertAdapter  (PDF passthrough | LibreOffice)
       → EmailAdapter    (console | Resend)
       → Redis (rate limiting / cache)
 ```
@@ -36,7 +37,9 @@ src/
       storage/         # StorageAdapter: types, local, r2, index
       payments/        # PaymentsAdapter: types, mock, razorpay, index
       scan/            # ScanAdapter: stub | clamav
+      convert/         # ConvertAdapter: PDF passthrough | libreoffice
       email/           # EmailAdapter: console | resend
+    documents/         # upload pipeline, pdf helpers, service, storage keys
 tests/                 # Vitest unit tests
 ```
 
