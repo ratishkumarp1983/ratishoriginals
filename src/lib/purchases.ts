@@ -200,9 +200,15 @@ export async function createOrder(
 
 /**
  * Mark a purchase COMPLETED from its order id. Idempotent: a second call (e.g.
- * webhook after the client callback) is a no-op. Records the coupon redemption
- * and increments the counter atomically, tolerating the one-per-user DB
- * constraint as a backstop.
+ * webhook after the client callback) is a no-op.
+ *
+ * The status flip is a single atomic statement, and the coupon redemption is
+ * recorded AFTERWARD (see `recordRedemption`), never inside the same
+ * transaction. That ordering matters: if the redemption were inside the
+ * transaction, a one-per-user unique violation (a genuine concurrent race
+ * across two titles) would abort the Postgres transaction and roll the
+ * COMPLETED status back too, leaving a captured payment stuck PENDING with no
+ * access. By separating them, a captured payment always results in access.
  */
 export async function completePurchaseByOrder(
   orderId: string,
@@ -215,32 +221,15 @@ export async function completePurchaseByOrder(
   if (!purchase) return "unknown";
   if (purchase.status === "COMPLETED") return "already";
 
-  await prisma.$transaction(async (tx) => {
-    const updated = await tx.purchase.updateMany({
-      where: { id: purchase.id, status: { not: "COMPLETED" } },
-      data: { status: "COMPLETED", razorpayPaymentId: paymentId },
-    });
-    if (updated.count === 0) return; // a concurrent completion won
-
-    if (purchase.couponId) {
-      try {
-        await tx.couponRedemption.create({
-          data: {
-            couponId: purchase.couponId,
-            userId: purchase.userId,
-            purchaseId: purchase.id,
-          },
-        });
-        await tx.coupon.update({
-          where: { id: purchase.couponId },
-          data: { usedCount: { increment: 1 } },
-        });
-      } catch (err) {
-        // Already redeemed by this user (unique backstop). Do not double count.
-        if ((err as { code?: string }).code !== "P2002") throw err;
-      }
-    }
+  // Atomically flip PENDING -> COMPLETED. A concurrent completion of the same
+  // order loses this guard and is reported as "already" (no double audit).
+  const flipped = await prisma.purchase.updateMany({
+    where: { id: purchase.id, status: { not: "COMPLETED" } },
+    data: { status: "COMPLETED", razorpayPaymentId: paymentId },
   });
+  if (flipped.count === 0) return "already";
+
+  await recordRedemption(purchase.id, purchase.userId, purchase.couponId);
 
   await audit({
     action: "PURCHASE_COMPLETE",
@@ -258,21 +247,32 @@ export async function completePurchaseByOrder(
   return "completed";
 }
 
+/**
+ * Record a coupon redemption for a completed purchase and advance the usage
+ * counter, idempotently and OUTSIDE any completion transaction.
+ *
+ * - `skipDuplicates` means a repeat redemption (blocked by the
+ *   CouponRedemption(couponId,userId) unique) never throws, so calling this
+ *   after a status flip can never roll that flip back. The redemption row stays
+ *   the authoritative per-user record.
+ * - The counter is advanced with an atomic conditional increment
+ *   (`usedCount < usageLimit`) so concurrent completions can never push the
+ *   global usage cap past its limit in the ledger.
+ */
 async function recordRedemption(
   purchaseId: string,
   userId: string,
   couponId: string | null,
 ) {
   if (!couponId) return;
-  try {
-    await prisma.$transaction([
-      prisma.couponRedemption.create({ data: { couponId, userId, purchaseId } }),
-      prisma.coupon.update({
-        where: { id: couponId },
-        data: { usedCount: { increment: 1 } },
-      }),
-    ]);
-  } catch (err) {
-    if ((err as { code?: string }).code !== "P2002") throw err;
-  }
+  const inserted = await prisma.couponRedemption.createMany({
+    data: { couponId, userId, purchaseId },
+    skipDuplicates: true,
+  });
+  if (inserted.count === 0) return; // this user already redeemed; do not double count
+  await prisma.$executeRaw`
+    UPDATE "Coupon"
+    SET "usedCount" = "usedCount" + 1
+    WHERE "id" = ${couponId}
+      AND ("usageLimit" IS NULL OR "usedCount" < "usageLimit")`;
 }
