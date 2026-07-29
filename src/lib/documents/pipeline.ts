@@ -111,7 +111,7 @@ export async function processUpload(
     pageCount = await getPdfPageCount(pdf);
   } catch {
     throw new UploadError(
-      "The file could not be read as a PDF — it may be corrupt or password-protected.",
+      "The file could not be read as a PDF - it may be corrupt or password-protected.",
     );
   }
   if (pageCount < 1) {

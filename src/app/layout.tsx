@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Ratish Originals — Premium Digital Reading",
+    default: "Ratish Originals - Premium Digital Reading",
     template: "%s · Ratish Originals",
   },
   description:

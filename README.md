@@ -71,5 +71,5 @@ Default admin (from `.env`): `admin@ratishoriginals.local` / `ChangeMe-Admin-123
 
 ## Documentation
 
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — design, adapters, security model
-- [`docs/BUILD-PLAN.md`](docs/BUILD-PLAN.md) — phased plan and checkpoints
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) - design, adapters, security model
+- [`docs/BUILD-PLAN.md`](docs/BUILD-PLAN.md) - phased plan and checkpoints

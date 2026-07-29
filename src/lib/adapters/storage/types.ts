@@ -2,7 +2,7 @@
  * Storage adapter contract.
  *
  * The rest of the app only ever holds opaque `key`s (e.g. the value stored in
- * Document.storagePath). Original object URLs are NEVER handed to clients — a
+ * Document.storagePath). Original object URLs are NEVER handed to clients - a
  * caller that needs to serve bytes asks for a short-lived signed URL, or reads
  * the bytes server-side. This is what keeps original documents unexposed
  * (SRS §8 "Never expose storage URLs").

@@ -79,7 +79,7 @@ export default async function AdminDocumentsPage() {
                   </Badge>
                 </TableCell>
                 <TableCell>{formatPrice(d.price, d.currency)}</TableCell>
-                <TableCell>{d.pageCount ?? "—"}</TableCell>
+                <TableCell>{d.pageCount ?? "-"}</TableCell>
                 <TableCell className="text-right">
                   <Link
                     href={`/admin/documents/${d.id}/edit`}

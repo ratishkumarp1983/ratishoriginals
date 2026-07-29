@@ -10,7 +10,7 @@ export default async function AccountPage() {
     <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-12">
       <h1 className="text-2xl font-semibold tracking-tight">Your account</h1>
       <dl className="mt-6 divide-y divide-neutral-200 dark:divide-neutral-800">
-        <Row label="Name" value={user.name ?? "—"} />
+        <Row label="Name" value={user.name ?? "-"} />
         <Row label="Email" value={user.email} />
         <Row label="Role" value={user.role} />
         <Row label="Membership" value={user.membershipStatus} />

@@ -1,4 +1,4 @@
-// Ratish Originals (RatishOriginals) — Prisma schema
+// Ratish Originals (RatishOriginals) - Prisma schema
 // Single-author publishing platform today, architected for a multi-author
 // marketplace tomorrow. See docs/ARCHITECTURE.md for the design rationale.
 
@@ -151,7 +151,7 @@ model Document {
   seoDescription String? @db.Text
   ogImage        String?
 
-  // Future marketplace (SRS §15) — single author today
+  // Future marketplace (SRS §15) - single author today
   authorId String?
   author   Author? @relation(fields: [authorId], references: [id])
 
@@ -172,7 +172,7 @@ model Document {
   @@index([authorId])
 }
 
-// Rendered/protected page store — populated by the upload pipeline.
+// Rendered/protected page store - populated by the upload pipeline.
 // For the hybrid reader we keep per-page keys so we can serve one page at a
 // time behind short-lived signed URLs (and swap to rasterized images later).
 model DocumentPage {
@@ -446,7 +446,7 @@ model AuditLog {
 }
 
 // ---------------------------------------------------------------------------
-// Future marketplace (SRS §15) — present but unused in MVP
+// Future marketplace (SRS §15) - present but unused in MVP
 // ---------------------------------------------------------------------------
 
 model Author {

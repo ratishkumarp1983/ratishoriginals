@@ -40,7 +40,7 @@ function cleanMetadata(values: MetadataValueInput[]) {
 }
 
 /**
- * Clean, then verify every referenced metadata field exists — so an unknown
+ * Clean, then verify every referenced metadata field exists - so an unknown
  * (but well-formed) metadataId is a 400, not a Prisma FK 500.
  */
 async function resolveMetadata(values: MetadataValueInput[]) {

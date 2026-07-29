@@ -6,7 +6,7 @@ import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { hashResetToken, RESET_PREFIX } from "@/lib/reset-token";
 import { audit } from "@/lib/audit";
 
-/** FR-1.3 Password reset — completion stage. */
+/** FR-1.3 Password reset - completion stage. */
 export async function POST(req: Request) {
   const ip = clientIp(req.headers);
 

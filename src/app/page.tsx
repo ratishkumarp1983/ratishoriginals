@@ -1,7 +1,7 @@
 import { env } from "@/lib/env";
 
 /**
- * Foundation landing page. This is a placeholder for Step 1 — it renders the
+ * Foundation landing page. This is a placeholder for Step 1 - it renders the
  * brand and a live view of which service adapters are active, so the wiring is
  * verifiable at a glance. The real storefront arrives in later steps.
  */
@@ -47,7 +47,7 @@ export default function Home() {
         </h1>
         <p className="max-w-xl text-lg text-neutral-600 dark:text-neutral-400">
           Discover, preview, purchase, and read original works securely online.
-          The foundation is in place — authentication, the storefront, and the
+          The foundation is in place - authentication, the storefront, and the
           protected reader are being built in phases.
         </p>
       </header>

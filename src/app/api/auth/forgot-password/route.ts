@@ -10,7 +10,7 @@ import { audit } from "@/lib/audit";
 
 const TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hour
 
-/** FR-1.3 Password reset — request stage. Always responds generically. */
+/** FR-1.3 Password reset - request stage. Always responds generically. */
 export async function POST(req: Request) {
   const ip = clientIp(req.headers);
 

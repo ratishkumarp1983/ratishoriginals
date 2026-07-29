@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 /**
- * Coarse UX redirect only. This is NOT the security boundary — it just checks
+ * Coarse UX redirect only. This is NOT the security boundary - it just checks
  * for the presence of a session cookie and bounces obviously-unauthenticated
  * visitors from protected areas to /login. Real authorization (identity, role,
  * entitlement) is enforced server-side in each page/layout/route handler via

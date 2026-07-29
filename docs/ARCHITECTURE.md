@@ -53,14 +53,14 @@ singleton. Application code depends only on the interface in `types.ts`.
   storage keys. To serve bytes we either read them server-side or issue a
   short-lived signed URL (default 30 s). The local driver's "signed URL" points
   at an authenticated app route that verifies an HMAC token **and** the caller's
-  entitlement before streaming — so even dev enforces the rule.
+  entitlement before streaming - so even dev enforces the rule.
 - **Server-side authorization only.** Entitlement (purchase / membership / admin
   grant) is checked on the server for every protected read. Nothing the client
   asserts is trusted.
 - **Payments are webhook-verified.** Access is granted only after a server-side
   verified Razorpay webhook or signature check (HMAC-SHA256). The mock gateway
   uses the identical verification path, so dev and prod exercise the same code.
-- **Passwords** are Argon2id (`@node-rs/argon2`, prebuilt binaries — no Windows
+- **Passwords** are Argon2id (`@node-rs/argon2`, prebuilt binaries - no Windows
   build toolchain). Policy (12-char min) is enforced at the validation layer.
 - **Audit trail** (`lib/audit.ts`) records uploads, deletes, purchases,
   membership changes, and admin actions; best-effort so it never breaks the
@@ -76,7 +76,7 @@ floating-point errors. Default currency INR, configurable per document.
 
 `Author` exists now; `Document.authorId` is a nullable FK, null for the single
 owner. Turning on the marketplace later means populating authors, adding
-revenue-share + payout tables, and an author dashboard — no migration of
+revenue-share + payout tables, and an author dashboard - no migration of
 existing purchase/reading data.
 
 ## Dynamic metadata (SRS FR-3)

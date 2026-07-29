@@ -8,7 +8,7 @@ import type { SignedUrl, StorageAdapter } from "./types";
  * Local-disk storage for development. Objects live under STORAGE_LOCAL_DIR
  * (outside `public/`, so they are never statically served). "Signed URLs"
  * point at an authenticated app route that verifies an HMAC token AND the
- * caller's entitlement before streaming bytes — so even local dev enforces the
+ * caller's entitlement before streaming bytes - so even local dev enforces the
  * "no direct object URLs" rule.
  */
 export class LocalStorageAdapter implements StorageAdapter {

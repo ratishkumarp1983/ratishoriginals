@@ -5,7 +5,7 @@ import { coverContentType } from "@/lib/documents/keys";
 
 /**
  * Public cover image. Covers are marketing assets shown on the storefront, so
- * this route is intentionally unauthenticated — but it only ever serves the
+ * this route is intentionally unauthenticated - but it only ever serves the
  * cover, never the document body. The original/sample PDFs are served
  * elsewhere behind entitlement checks.
  */

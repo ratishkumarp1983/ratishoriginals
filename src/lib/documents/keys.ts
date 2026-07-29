@@ -1,6 +1,6 @@
 /**
  * Deterministic storage keys for a document's protected assets. These keys are
- * opaque to clients and never exposed directly — bytes are served only through
+ * opaque to clients and never exposed directly - bytes are served only through
  * authenticated app routes / short-lived signed URLs.
  */
 export const docKeys = {

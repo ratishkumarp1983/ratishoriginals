@@ -16,14 +16,14 @@ auto-run to completion.
 
 Tell me if any deviation should be reversed.
 
-## Phase 1 — MVP (SRS §16)
+## Phase 1 - MVP (SRS §16)
 
-- [x] **Step 1 — Foundation** ✅ *(current checkpoint)*
+- [x] **Step 1 - Foundation** ✅ *(current checkpoint)*
   Next.js + TS + Tailwind scaffold; complete Prisma schema (SRS §10 + audit +
   future-marketplace tables); adapter layer (storage/payments/scan/email);
   env validation; docker-compose (Postgres+Redis); seed (admin/metadata/
   membership); Vitest; docs. Build + typecheck + tests green.
-- [x] **Step 2 — Authentication** ✅ *(current checkpoint)*
+- [x] **Step 2 - Authentication** ✅ *(current checkpoint)*
   Auth.js v5 (JWT sessions): Google OAuth (conditional) + email/password
   (Argon2id) via Credentials; registration API; password reset (request +
   single-use hashed token + completion, via the email adapter); role/membership
@@ -33,7 +33,7 @@ Tell me if any deviation should be reversed.
   reset) with shadcn/ui. Build + typecheck + lint + 10 tests green; full flow
   (register → auto-login → guarded pages → admin role → logout → reset) verified
   in-browser against Postgres.
-- [x] **Step 3 — Documents & dynamic metadata (admin)** ✅ *(current checkpoint)*
+- [x] **Step 3 - Documents & dynamic metadata (admin)** ✅ *(current checkpoint)*
   Upload pipeline (validate → virus scan → convert-to-PDF → sample generation →
   store) via a new conversion adapter (PDF passthrough; LibreOffice driver for
   DOC/DOCX/TXT/RTF behind `CONVERT_DRIVER`); document create/edit/delete with
@@ -43,28 +43,28 @@ Tell me if any deviation should be reversed.
   end-to-end: real 12-page PDF uploaded via authed multipart → pageCount=12,
   sample clamped to 4 pages, files stored, metadata linked, audit logged;
   auth boundary (401 anon / 403 reader); 15 tests, build/lint/typecheck green.
-- [ ] **Step 4 — Storefront & protected reader**
+- [ ] **Step 4 - Storefront & protected reader**
   Public catalog, search, document pages (metadata visibility rule), sample
   reading (configurable `samplePages`), protected paginated reader with
   per-session watermark, signed short-lived page fetches, entitlement checks.
-- [ ] **Step 5 — Purchases, coupons, lifetime access**
+- [ ] **Step 5 - Purchases, coupons, lifetime access**
   Buy flow → coupon apply → amount calc → Razorpay order → webhook → grant
   lifetime access; coupon engine (percentage/fixed, expiry, usage limits,
   one-time, member-only, doc-specific).
-- [ ] **Step 6 — Memberships**
+- [ ] **Step 6 - Memberships**
   Plan config, subscribe (Razorpay), status lifecycle (ACTIVE/EXPIRED/PENDING),
   member-only content, member discounts.
-- [ ] **Step 7 — Reader library & progress**
+- [ ] **Step 7 - Reader library & progress**
   Library (purchased + membership), reading history, continue reading, progress
   (last page / completion %), wishlist.
-- [ ] **Step 8 — Admin dashboard & analytics**
+- [ ] **Step 8 - Admin dashboard & analytics**
   Sales, views, conversion, revenue, memberships, coupon usage; audit-log
   viewer.
-- [ ] **Step 9 — Reviews & ratings (SRS FR-12)**
+- [ ] **Step 9 - Reviews & ratings (SRS FR-12)**
   Eligibility (purchase/membership/grant), CRUD with edit audit trail, verified
   badges, helpful votes, spoiler protection, moderation, distribution display,
   review analytics.
-- [ ] **Step 10 — Hardening & delivery**
+- [ ] **Step 10 - Hardening & delivery**
   Rate limiting, security headers/CSP, SEO (sitemap, structured data, OG),
   legal pages, Sentry/PostHog wiring, Dockerfile, CI, deployment docs.
 
@@ -77,15 +77,15 @@ findings were triaged and the real defects fixed + re-verified at runtime:
 - Unknown (well-formed) `metadataId` returns 400 (was a Prisma FK 500).
 - `price` is enforced as required (a missing price no longer becomes 0).
 - Oversize/invalid cover is validated before any bytes are stored, and the
-  whole create path rolls back deterministically — no orphaned files.
+  whole create path rolls back deterministically - no orphaned files.
 - Editing only `samplePages` now rebuilds `sample.pdf` (was leaving it stale).
 - Cover image is enforced server-side (SRS FR-2 mandatory field).
 - Hardening: rate limit on uploads, cover magic-byte check + `nosniff`,
   `JSON.parse` guarded, P2002/P2025 mapped to 409/404, 401 vs 403 messages,
   proper boolean parsing for metadata `active`.
 
-## Phase 2 (SRS §17) — later
+## Phase 2 (SRS §17) - later
 Wishlist enhancements, recommendations, reading notes, collections.
 
-## Phase 3 (SRS §18) — later
+## Phase 3 (SRS §18) - later
 Multiple authors, revenue sharing, author payouts, marketplace.

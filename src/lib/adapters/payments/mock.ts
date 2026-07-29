@@ -12,7 +12,7 @@ import type {
 /**
  * In-process payment gateway for development and tests. It mimics Razorpay's
  * signature scheme exactly (HMAC-SHA256), so the same server-side verification
- * code path runs in dev and prod — only the network call is faked.
+ * code path runs in dev and prod - only the network call is faked.
  *
  * A test/dev checkout can compute a valid signature with `mockSignature()`,
  * which the mock's checkout page and the automated tests use to simulate a

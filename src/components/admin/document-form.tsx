@@ -205,7 +205,7 @@ export function DocumentForm({
       {metadataFields.length > 0 && (
         <fieldset className="space-y-4 rounded-xl border border-neutral-200 p-5 dark:border-neutral-800">
           <legend className="px-1 text-sm font-medium text-neutral-500">
-            Metadata (optional — blank fields stay hidden)
+            Metadata (optional - blank fields stay hidden)
           </legend>
           {metadataFields.map((f) => (
             <Field key={f.id} label={f.name} htmlFor={`meta-${f.id}`}>
