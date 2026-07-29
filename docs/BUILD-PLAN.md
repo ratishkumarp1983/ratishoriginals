@@ -118,10 +118,23 @@ Tell me if any deviation should be reversed.
   draft/admin exclusion and the 30-day filter, per-title and coupon tables, the
   view rate-limit, and reader lockout (307). One migration
   (`analytics_views_membership_amount`); tsc/lint/build green, 35 tests.
-- [ ] **Step 9 - Reviews & ratings (SRS FR-12)**
-  Eligibility (purchase/membership/grant), CRUD with edit audit trail, verified
-  badges, helpful votes, spoiler protection, moderation, distribution display,
-  review analytics.
+- [x] **Step 9 - Reviews & ratings (SRS FR-12)** (current checkpoint)
+  No migration (schema already had Review / ReviewVote / ReviewEdit). Eligibility:
+  only a completed purchase or an active membership covering the title lets a
+  reader review it, and the verified-purchase / verified-member badges derive
+  from that access (never client-set). One review per reader per title (upsert)
+  with an edit audit trail (ReviewEdit snapshots the prior version on every
+  change) and delete (votes + edits cascade). Book page shows average, total,
+  the 5-bar rating distribution, featured (pinned) + latest reviews, sorting
+  (most helpful / highest / lowest / newest / oldest), helpful / not-helpful
+  votes (one per reader, togglable, self-vote blocked), spoiler collapse, and
+  public admin replies. Admin `/admin/reviews`: analytics tiles + tables
+  (average, count, highest / lowest-rated titles, most helpful) and a moderation
+  list (hide / restore / pin / unpin / reply / delete), all audited. Reader-side
+  reporting is deferred to Phase 2 (owner call). Verified live: eligibility
+  403/401, both verified badges, edit snapshot, votes + self-vote 400 + toggle,
+  average and distribution, spoiler collapse, every moderation action, analytics
+  page, and admin authz (307 / 403). tsc/lint/build green, 38 tests (3 new).
 - [ ] **Step 10 - Hardening & delivery**
   Rate limiting, security headers/CSP, SEO (sitemap, structured data, OG),
   legal pages, Sentry/PostHog wiring, Dockerfile, CI, deployment docs.

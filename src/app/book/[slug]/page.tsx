@@ -10,7 +10,11 @@ import { BuyButton } from "@/components/store/buy-button";
 import { BookCover } from "@/components/store/book-cover";
 import { WishlistButton } from "@/components/store/wishlist-button";
 import { ViewBeacon } from "@/components/store/view-beacon";
+import { ReviewsSection } from "@/components/reviews/reviews-section";
+import type { ReviewSort } from "@/lib/reviews";
 import { env } from "@/lib/env";
+
+const REVIEW_SORTS: ReviewSort[] = ["helpful", "highest", "lowest", "newest", "oldest"];
 
 async function loadDocument(slug: string) {
   return prisma.document.findUnique({
@@ -60,10 +64,16 @@ export async function generateMetadata({
 
 export default async function BookPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ rsort?: string }>;
 }) {
   const { slug } = await params;
+  const { rsort } = await searchParams;
+  const sort: ReviewSort = REVIEW_SORTS.includes(rsort as ReviewSort)
+    ? (rsort as ReviewSort)
+    : "helpful";
   const doc = await loadDocument(slug);
   const user = await getCurrentUser();
   const isAdmin = user?.role === "ADMIN";
@@ -160,6 +170,10 @@ export default async function BookPage({
           )}
         </div>
       </div>
+
+      {doc.status === "PUBLISHED" && (
+        <ReviewsSection documentId={doc.id} slug={doc.slug} sort={sort} user={user} />
+      )}
     </main>
   );
 }

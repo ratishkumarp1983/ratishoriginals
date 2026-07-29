@@ -8,6 +8,7 @@ const NAV = [
   { href: "/admin/metadata", label: "Metadata fields" },
   { href: "/admin/memberships", label: "Memberships" },
   { href: "/admin/coupons", label: "Coupons" },
+  { href: "/admin/reviews", label: "Reviews" },
   { href: "/admin/audit", label: "Audit log" },
 ];
 
