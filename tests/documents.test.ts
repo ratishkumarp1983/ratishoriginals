@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { PDFDocument } from "pdf-lib";
 import { slugify } from "@/lib/slug";
 import { getPdfPageCount, makeSamplePdf, looksLikePdf } from "@/lib/documents/pdf";
+import { documentCoreSchema } from "@/lib/validation/document";
+import { metadataCreateSchema } from "@/lib/validation/metadata";
 
 async function makePdf(pages: number): Promise<Buffer> {
   const doc = await PDFDocument.create();
@@ -39,5 +41,42 @@ describe("pdf sample generation", () => {
 
   it("rejects non-pdf bytes", () => {
     expect(looksLikePdf(Buffer.from("hello world"))).toBe(false);
+  });
+});
+
+describe("document core validation", () => {
+  const base = {
+    title: "T",
+    description: "D",
+    samplePages: 5,
+    status: "DRAFT",
+  };
+
+  it("requires price (absent is rejected, not coerced to 0)", () => {
+    const missing = documentCoreSchema.safeParse({ ...base });
+    expect(missing.success).toBe(false);
+  });
+
+  it("rejects a non-numeric price but accepts a numeric one", () => {
+    expect(documentCoreSchema.safeParse({ ...base, price: "abc" }).success).toBe(
+      false,
+    );
+    const ok = documentCoreSchema.safeParse({ ...base, price: "199.50" });
+    expect(ok.success).toBe(true);
+    if (ok.success) expect(ok.data.price).toBe(199.5);
+  });
+
+  it("rejects a negative price", () => {
+    expect(documentCoreSchema.safeParse({ ...base, price: "-1" }).success).toBe(
+      false,
+    );
+  });
+});
+
+describe("metadata boolean input", () => {
+  it("treats the string 'false' as false, not true", () => {
+    const r = metadataCreateSchema.safeParse({ name: "X", active: "false" });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.active).toBe(false);
   });
 });

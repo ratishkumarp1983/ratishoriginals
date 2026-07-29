@@ -4,10 +4,16 @@ import { z } from "zod";
 export const documentCoreSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(200),
   description: z.string().trim().min(1, "Description is required").max(5000),
-  price: z.coerce
-    .number()
-    .min(0, "Price cannot be negative")
-    .max(1_000_000, "Price is too large"),
+  // Price is mandatory (SRS FR-2). Absent/blank -> undefined so it fails as
+  // required rather than silently coercing to 0; non-numeric -> NaN which the
+  // number check rejects.
+  price: z.preprocess(
+    (v) => (v === null || v === undefined || v === "" ? undefined : Number(v)),
+    z
+      .number({ error: "Price is required" })
+      .min(0, "Price cannot be negative")
+      .max(1_000_000, "Price is too large"),
+  ),
   currency: z.string().trim().min(1).max(8).default("INR"),
   samplePages: z.coerce
     .number()

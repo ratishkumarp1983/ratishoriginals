@@ -68,6 +68,22 @@ Tell me if any deviation should be reversed.
   Rate limiting, security headers/CSP, SEO (sitemap, structured data, OG),
   legal pages, Sentry/PostHog wiring, Dockerfile, CI, deployment docs.
 
+### Step 3 review round (independent reviewer + QA)
+
+After Step 3, an independent code review and an adversarial QA pass ran. All
+findings were triaged and the real defects fixed + re-verified at runtime:
+
+- Corrupt / encrypted / zero-page PDF now returns a clean 400 (was 500).
+- Unknown (well-formed) `metadataId` returns 400 (was a Prisma FK 500).
+- `price` is enforced as required (a missing price no longer becomes 0).
+- Oversize/invalid cover is validated before any bytes are stored, and the
+  whole create path rolls back deterministically — no orphaned files.
+- Editing only `samplePages` now rebuilds `sample.pdf` (was leaving it stale).
+- Cover image is enforced server-side (SRS FR-2 mandatory field).
+- Hardening: rate limit on uploads, cover magic-byte check + `nosniff`,
+  `JSON.parse` guarded, P2002/P2025 mapped to 409/404, 401 vs 403 messages,
+  proper boolean parsing for metadata `active`.
+
 ## Phase 2 (SRS §17) — later
 Wishlist enhancements, recommendations, reading notes, collections.
 

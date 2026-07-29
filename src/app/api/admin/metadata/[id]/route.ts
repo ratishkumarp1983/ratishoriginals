@@ -11,7 +11,10 @@ export async function PATCH(
 ) {
   const guard = await getAdminForApi();
   if ("error" in guard) {
-    return NextResponse.json({ error: "Forbidden" }, { status: guard.error });
+    return NextResponse.json(
+      { error: guard.error === 401 ? "Unauthorized" : "Forbidden" },
+      { status: guard.error },
+    );
   }
   const { id } = await params;
 
@@ -24,11 +27,17 @@ export async function PATCH(
     );
   }
 
-  const field = await prisma.metadataDefinition
-    .update({ where: { id }, data: parsed.data })
-    .catch(() => null);
-  if (!field) {
-    return NextResponse.json({ error: "Field not found" }, { status: 404 });
+  let field;
+  try {
+    field = await prisma.metadataDefinition.update({
+      where: { id },
+      data: parsed.data,
+    });
+  } catch (err) {
+    if ((err as { code?: string }).code === "P2025") {
+      return NextResponse.json({ error: "Field not found" }, { status: 404 });
+    }
+    throw err;
   }
 
   await audit({
@@ -48,16 +57,22 @@ export async function DELETE(
 ) {
   const guard = await getAdminForApi();
   if ("error" in guard) {
-    return NextResponse.json({ error: "Forbidden" }, { status: guard.error });
+    return NextResponse.json(
+      { error: guard.error === 401 ? "Unauthorized" : "Forbidden" },
+      { status: guard.error },
+    );
   }
   const { id } = await params;
 
   // Deleting a definition cascades its per-document values (schema onDelete).
-  const deleted = await prisma.metadataDefinition
-    .delete({ where: { id } })
-    .catch(() => null);
-  if (!deleted) {
-    return NextResponse.json({ error: "Field not found" }, { status: 404 });
+  let deleted;
+  try {
+    deleted = await prisma.metadataDefinition.delete({ where: { id } });
+  } catch (err) {
+    if ((err as { code?: string }).code === "P2025") {
+      return NextResponse.json({ error: "Field not found" }, { status: 404 });
+    }
+    throw err;
   }
 
   await audit({

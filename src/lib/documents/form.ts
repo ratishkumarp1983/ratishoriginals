@@ -42,7 +42,13 @@ export async function parseDocumentForm(req: Request): Promise<ParsedDocumentFor
   let metadata: ParsedDocumentForm["metadata"] = [];
   const metaRaw = form.get("metadata");
   if (typeof metaRaw === "string" && metaRaw.trim()) {
-    const parsed = metadataValuesSchema.safeParse(JSON.parse(metaRaw));
+    let json: unknown;
+    try {
+      json = JSON.parse(metaRaw);
+    } catch {
+      throw new FormError("Metadata must be valid JSON.");
+    }
+    const parsed = metadataValuesSchema.safeParse(json);
     if (!parsed.success) throw new FormError("Invalid metadata values");
     metadata = parsed.data;
   }

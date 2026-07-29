@@ -31,6 +31,7 @@ export async function GET(
         "Content-Type": coverContentType(ext),
         "Content-Length": String(bytes.length),
         "Cache-Control": "public, max-age=3600",
+        "X-Content-Type-Options": "nosniff",
       },
     });
   } catch {

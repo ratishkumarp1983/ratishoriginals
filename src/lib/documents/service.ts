@@ -5,6 +5,7 @@ import { storage } from "@/lib/adapters/storage";
 import { audit } from "@/lib/audit";
 import { uniqueDocumentSlug } from "@/lib/slug";
 import { docKeys } from "@/lib/documents/keys";
+import { makeSamplePdf } from "@/lib/documents/pdf";
 import { processUpload, UploadError } from "@/lib/documents/pipeline";
 import type { DocumentCoreInput, MetadataValueInput } from "@/lib/validation/document";
 
@@ -38,21 +39,38 @@ function cleanMetadata(values: MetadataValueInput[]) {
   return [...seen.entries()].map(([metadataId, value]) => ({ metadataId, value }));
 }
 
+/**
+ * Clean, then verify every referenced metadata field exists — so an unknown
+ * (but well-formed) metadataId is a 400, not a Prisma FK 500.
+ */
+async function resolveMetadata(values: MetadataValueInput[]) {
+  const meta = cleanMetadata(values);
+  if (meta.length === 0) return meta;
+  const ids = meta.map((m) => m.metadataId);
+  const found = await prisma.metadataDefinition.findMany({
+    where: { id: { in: ids } },
+    select: { id: true },
+  });
+  const known = new Set(found.map((f) => f.id));
+  const unknown = ids.find((id) => !known.has(id));
+  if (unknown) throw new UploadError("One or more metadata fields do not exist.");
+  return meta;
+}
+
 export async function createDocument(args: CreateArgs) {
   const id = randomUUID();
   const slug = await uniqueDocumentSlug(args.core.title);
 
-  const processed = await processUpload({
-    documentId: id,
-    fileName: args.file.name,
-    fileBytes: args.file.bytes,
-    samplePages: args.core.samplePages,
-    cover: args.cover ?? null,
-  });
-
-  const meta = cleanMetadata(args.metadata);
-
   try {
+    const meta = await resolveMetadata(args.metadata);
+    const processed = await processUpload({
+      documentId: id,
+      fileName: args.file.name,
+      fileBytes: args.file.bytes,
+      samplePages: args.core.samplePages,
+      cover: args.cover ?? null,
+    });
+
     const doc = await prisma.document.create({
       data: {
         id,
@@ -86,12 +104,14 @@ export async function createDocument(args: CreateArgs) {
     });
     return doc;
   } catch (err) {
-    // Roll back stored assets so a failed create does not orphan files.
+    // Roll back any stored assets so a failure at any stage (validation,
+    // pipeline, or DB) never orphans files. Keys are deterministic and delete
+    // is idempotent, so this is safe even if the throw happened before a put.
     await Promise.all([
-      storage().delete(processed.originalKey),
-      storage().delete(processed.sampleKey),
-      processed.coverKey
-        ? storage().delete(processed.coverKey)
+      storage().delete(docKeys.original(id)),
+      storage().delete(docKeys.sample(id)),
+      args.cover
+        ? storage().delete(docKeys.cover(id, args.cover.ext))
         : Promise.resolve(),
     ]);
     throw err;
@@ -138,12 +158,22 @@ export async function updateDocument(args: UpdateArgs) {
       }
       coverImage = processed.coverKey;
     }
+  } else if (args.core.samplePages !== existing.samplePages) {
+    // Sample count changed without a new file: actually rebuild sample.pdf from
+    // the stored original so the physical preview matches the DB value.
+    const original = await storage().get(existing.storagePath);
+    const { sample, totalPages } = await makeSamplePdf(
+      original,
+      args.core.samplePages,
+    );
+    await storage().put(docKeys.sample(args.id), sample, "application/pdf");
+    pageCount = totalPages;
+    samplePages = Math.max(1, Math.min(args.core.samplePages, totalPages));
   } else {
-    // Sample count may change without a new file: regenerate the sample.
-    samplePages = Math.max(1, Math.min(args.core.samplePages, pageCount ?? args.core.samplePages));
+    samplePages = existing.samplePages;
   }
 
-  const meta = cleanMetadata(args.metadata);
+  const meta = await resolveMetadata(args.metadata);
   const willPublish = args.core.status === "PUBLISHED";
 
   const doc = await prisma.$transaction(async (tx) => {

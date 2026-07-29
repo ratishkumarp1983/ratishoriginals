@@ -3,13 +3,16 @@ import { prisma } from "@/lib/prisma";
 import { getAdminForApi } from "@/lib/auth-helpers";
 import { parseDocumentForm, FormError } from "@/lib/documents/form";
 import { createDocument, UploadError } from "@/lib/documents/service";
-import { clientIp } from "@/lib/rate-limit";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 /** List documents for the admin (all statuses). */
 export async function GET() {
   const guard = await getAdminForApi();
   if ("error" in guard) {
-    return NextResponse.json({ error: "Forbidden" }, { status: guard.error });
+    return NextResponse.json(
+      { error: guard.error === 401 ? "Unauthorized" : "Forbidden" },
+      { status: guard.error },
+    );
   }
   const documents = await prisma.document.findMany({
     orderBy: { createdAt: "desc" },
@@ -31,7 +34,19 @@ export async function GET() {
 export async function POST(req: Request) {
   const guard = await getAdminForApi();
   if ("error" in guard) {
-    return NextResponse.json({ error: "Forbidden" }, { status: guard.error });
+    return NextResponse.json(
+      { error: guard.error === 401 ? "Unauthorized" : "Forbidden" },
+      { status: guard.error },
+    );
+  }
+
+  const ip = clientIp(req.headers);
+  const limited = await rateLimit(`doc-upload:${guard.user.id}`, 20, 60_000);
+  if (!limited.success) {
+    return NextResponse.json(
+      { error: "Too many uploads. Please slow down." },
+      { status: 429 },
+    );
   }
 
   let parsed;
@@ -50,6 +65,13 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
+  // Cover image is a mandatory document field (SRS FR-2).
+  if (!parsed.cover) {
+    return NextResponse.json(
+      { error: "A cover image is required." },
+      { status: 400 },
+    );
+  }
 
   try {
     const doc = await createDocument({
@@ -58,7 +80,7 @@ export async function POST(req: Request) {
       file: parsed.file,
       cover: parsed.cover,
       actorId: guard.user.id,
-      ip: clientIp(req.headers),
+      ip,
     });
     return NextResponse.json({ id: doc.id, slug: doc.slug }, { status: 201 });
   } catch (err) {

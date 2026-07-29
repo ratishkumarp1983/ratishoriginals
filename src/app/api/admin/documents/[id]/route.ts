@@ -11,7 +11,10 @@ export async function GET(
 ) {
   const guard = await getAdminForApi();
   if ("error" in guard) {
-    return NextResponse.json({ error: "Forbidden" }, { status: guard.error });
+    return NextResponse.json(
+      { error: guard.error === 401 ? "Unauthorized" : "Forbidden" },
+      { status: guard.error },
+    );
   }
   const { id } = await params;
   const document = await prisma.document.findUnique({
@@ -30,7 +33,10 @@ export async function PATCH(
 ) {
   const guard = await getAdminForApi();
   if ("error" in guard) {
-    return NextResponse.json({ error: "Forbidden" }, { status: guard.error });
+    return NextResponse.json(
+      { error: guard.error === 401 ? "Unauthorized" : "Forbidden" },
+      { status: guard.error },
+    );
   }
   const { id } = await params;
 
@@ -70,7 +76,10 @@ export async function DELETE(
 ) {
   const guard = await getAdminForApi();
   if ("error" in guard) {
-    return NextResponse.json({ error: "Forbidden" }, { status: guard.error });
+    return NextResponse.json(
+      { error: guard.error === 401 ? "Unauthorized" : "Forbidden" },
+      { status: guard.error },
+    );
   }
   const { id } = await params;
   try {

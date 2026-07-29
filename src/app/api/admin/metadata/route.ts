@@ -9,7 +9,10 @@ import { clientIp } from "@/lib/rate-limit";
 export async function GET() {
   const guard = await getAdminForApi();
   if ("error" in guard) {
-    return NextResponse.json({ error: "Forbidden" }, { status: guard.error });
+    return NextResponse.json(
+      { error: guard.error === 401 ? "Unauthorized" : "Forbidden" },
+      { status: guard.error },
+    );
   }
   const fields = await prisma.metadataDefinition.findMany({
     orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
@@ -21,7 +24,10 @@ export async function GET() {
 export async function POST(req: Request) {
   const guard = await getAdminForApi();
   if ("error" in guard) {
-    return NextResponse.json({ error: "Forbidden" }, { status: guard.error });
+    return NextResponse.json(
+      { error: guard.error === 401 ? "Unauthorized" : "Forbidden" },
+      { status: guard.error },
+    );
   }
 
   const body = await req.json().catch(() => null);
@@ -56,15 +62,27 @@ export async function POST(req: Request) {
     );
   }
 
-  const field = await prisma.metadataDefinition.create({
-    data: {
-      name: parsed.data.name,
-      key,
-      type: parsed.data.type,
-      displayOrder: parsed.data.displayOrder,
-      active: parsed.data.active,
-    },
-  });
+  let field;
+  try {
+    field = await prisma.metadataDefinition.create({
+      data: {
+        name: parsed.data.name,
+        key,
+        type: parsed.data.type,
+        displayOrder: parsed.data.displayOrder,
+        active: parsed.data.active,
+      },
+    });
+  } catch (err) {
+    // Lost a race against a concurrent create with the same key.
+    if ((err as { code?: string }).code === "P2002") {
+      return NextResponse.json(
+        { error: `A field with key "${key}" already exists.` },
+        { status: 409 },
+      );
+    }
+    throw err;
+  }
 
   await audit({
     action: "METADATA_CREATE",
