@@ -1,13 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
 /**
- * Placeholder purchase control. The full Razorpay checkout flow is wired up in
- * Step 5; for now this routes anonymous users to sign in and tells others that
- * checkout is arriving next, so the page is complete without faking a payment.
+ * Purchase entry point. Anonymous users are routed to sign in (and back to the
+ * book); authenticated users go to checkout, where the Razorpay/mock flow and
+ * coupons live.
  */
 export function BuyButton({
   slug,
@@ -22,10 +21,10 @@ export function BuyButton({
 
   function onClick() {
     if (!isAuthenticated) {
-      router.push(`/login?callbackUrl=/book/${slug}`);
+      router.push(`/login?callbackUrl=/checkout/${slug}`);
       return;
     }
-    toast.info("Checkout goes live in the next update.");
+    router.push(`/checkout/${slug}`);
   }
 
   return (

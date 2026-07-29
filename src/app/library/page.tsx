@@ -1,18 +1,73 @@
+import Link from "next/link";
 import type { Metadata } from "next";
+import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth-helpers";
+import { buttonVariants } from "@/components/ui/button";
 
 export const metadata: Metadata = { title: "Library" };
+export const dynamic = "force-dynamic";
 
 export default async function LibraryPage() {
-  await requireUser("/library");
+  const user = await requireUser("/library");
+
+  const purchases = await prisma.purchase.findMany({
+    where: { userId: user.id, status: "COMPLETED" },
+    orderBy: { updatedAt: "desc" },
+    select: {
+      id: true,
+      document: {
+        select: { id: true, slug: true, title: true, coverImage: true },
+      },
+    },
+  });
 
   return (
-    <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-12">
+    <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
       <h1 className="text-2xl font-semibold tracking-tight">Your library</h1>
-      <p className="mt-3 text-neutral-500">
-        Purchased documents, membership content, reading history, and continue
-        reading appear here. Built in a later step.
+      <p className="mt-1 text-sm text-neutral-500">
+        Titles you own, yours to read online for life.
       </p>
+
+      {purchases.length === 0 ? (
+        <div className="mt-8 rounded-xl border border-dashed border-neutral-300 p-10 text-center dark:border-neutral-700">
+          <p className="text-neutral-500">You have not bought any titles yet.</p>
+          <Link href="/browse" className={buttonVariants({ className: "mt-4" })}>
+            Browse the catalog
+          </Link>
+        </div>
+      ) : (
+        <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+          {purchases.map((p) => (
+            <Link
+              key={p.id}
+              href={`/read/${p.document.slug}`}
+              className="group flex flex-col overflow-hidden rounded-xl border border-neutral-200 transition-colors hover:border-neutral-300 dark:border-neutral-800 dark:hover:border-neutral-700"
+            >
+              <div className="aspect-[3/4] overflow-hidden bg-neutral-100 dark:bg-neutral-900">
+                {p.document.coverImage ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={`/api/documents/${p.document.id}/cover`}
+                    alt={`Cover of ${p.document.title}`}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center p-4 text-center text-sm text-neutral-400">
+                    {p.document.title}
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-1 flex-col gap-1 p-3">
+                <h3 className="line-clamp-2 text-sm font-medium">{p.document.title}</h3>
+                <span className="mt-auto text-xs text-neutral-500 group-hover:underline">
+                  Read now
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </main>
   );
 }

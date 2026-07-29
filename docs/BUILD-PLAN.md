@@ -58,10 +58,20 @@ Tell me if any deviation should be reversed.
   because the preview pane is hidden in this environment (rAF is throttled when
   `document.hidden`, which stalls canvas paint); pdf.js parsing + operator lists
   resolve fine, so rendering works in a normal visible browser.
-- [ ] **Step 5 - Purchases, coupons, lifetime access**
-  Buy flow → coupon apply → amount calc → Razorpay order → webhook → grant
-  lifetime access; coupon engine (percentage/fixed, expiry, usage limits,
-  one-time, member-only, doc-specific).
+- [x] **Step 5 - Purchases, coupons, lifetime access** (current checkpoint)
+  Checkout flow: create order (server-computed amount) -> pay -> server-verified
+  completion -> grant lifetime access (a COMPLETED Purchase, which
+  `getReadAccess` already honours). Mock gateway fully working in dev; Razorpay
+  checkout.js + webhook wired for prod. Webhook verification mandatory; the
+  client callback and the webhook both complete idempotently. Coupon engine
+  (percentage/fixed, expiry, usage limit, one-time-per-user, member-only,
+  doc-specific) with a live discount preview; free / 100%-off titles grant
+  instantly with no payment round-trip. Admin coupon CRUD + UI; real Buy button
+  -> `/checkout/[slug]`; purchased titles appear in the library.
+  Verified end-to-end via curl: 403->buy->200 access; single redemption and
+  usedCount despite a double completion; webhook completes on valid signature
+  and 400s on bad; every coupon rule (expired/members/one-time/limit/bad code)
+  rejects correctly. 25 tests, build/lint/typecheck green.
 - [ ] **Step 6 - Memberships**
   Plan config, subscribe (Razorpay), status lifecycle (ACTIVE/EXPIRED/PENDING),
   member-only content, member discounts.
