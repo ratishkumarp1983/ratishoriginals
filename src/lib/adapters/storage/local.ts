@@ -70,7 +70,9 @@ export class LocalStorageAdapter implements StorageAdapter {
       sig: token,
     });
     return {
-      url: `${env.APP_URL}/api/files?${params.toString()}`,
+      // Relative so the browser always fetches it same-origin, regardless of
+      // the host/port the app is served on (APP_URL can differ in dev/preview).
+      url: `/api/files?${params.toString()}`,
       expiresAt,
     };
   }

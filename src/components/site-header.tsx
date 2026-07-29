@@ -10,9 +10,17 @@ export async function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/80 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/80">
       <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-6">
-        <Link href="/" className="font-semibold tracking-tight">
-          Ratish Originals
-        </Link>
+        <div className="flex items-center gap-5">
+          <Link href="/" className="font-semibold tracking-tight">
+            Ratish Originals
+          </Link>
+          <Link
+            href="/browse"
+            className="text-sm text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
+          >
+            Browse
+          </Link>
+        </div>
         <nav className="flex items-center gap-2">
           {user ? (
             <UserMenu

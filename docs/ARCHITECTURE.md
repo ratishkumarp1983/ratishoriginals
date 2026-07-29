@@ -66,6 +66,22 @@ singleton. Application code depends only on the interface in `types.ts`.
   membership changes, and admin actions; best-effort so it never breaks the
   primary operation.
 
+## Reading (SRS §6)
+
+The reader (`/read/[slug]`) renders the PDF page by page with pdf.js in a Client
+Component. Bytes come over a short-lived signed URL that
+`/api/documents/[id]/read-url` mints ONLY after checking entitlement (admin,
+completed purchase, or active membership) at request time, since the HMAC token
+is an unbound bearer credential. Sample mode serves the pre-built sample PDF and
+is open to everyone; full mode serves the original and is gated. Every page
+carries a per-session watermark (reader email + timestamp) as a deterrent, and
+copy affordances (context menu, selection) are disabled. This is the hybrid
+approach from the build plan; a future rasterise-to-images path can slot in
+behind the same entitlement + signed-URL boundary. The pdf.js worker, standard
+fonts, and cmaps are copied into `public/` by `scripts/sync-pdf-worker.mjs` on
+postinstall; the worker is handed to pdf.js as an ES-module `Worker` via
+`workerPort`.
+
 ## Money
 
 Amounts are stored as `Decimal(10,2)`. At the payment boundary they convert to

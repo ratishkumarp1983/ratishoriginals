@@ -12,21 +12,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { DeleteDocumentButton } from "@/components/admin/delete-document-button";
+import { formatPrice } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Documents" };
-
-function formatPrice(price: { toString(): string }, currency: string) {
-  const n = Number(price.toString());
-  try {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency,
-      maximumFractionDigits: 2,
-    }).format(n);
-  } catch {
-    return `${currency} ${n.toFixed(2)}`;
-  }
-}
 
 export default async function AdminDocumentsPage() {
   const documents = await prisma.document.findMany({

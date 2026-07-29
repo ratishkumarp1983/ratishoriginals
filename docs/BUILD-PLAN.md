@@ -43,10 +43,21 @@ Tell me if any deviation should be reversed.
   end-to-end: real 12-page PDF uploaded via authed multipart → pageCount=12,
   sample clamped to 4 pages, files stored, metadata linked, audit logged;
   auth boundary (401 anon / 403 reader); 15 tests, build/lint/typecheck green.
-- [ ] **Step 4 - Storefront & protected reader**
-  Public catalog, search, document pages (metadata visibility rule), sample
-  reading (configurable `samplePages`), protected paginated reader with
-  per-session watermark, signed short-lived page fetches, entitlement checks.
+- [x] **Step 4 - Storefront & protected reader** (current checkpoint)
+  Public storefront (home + `/browse` with title/description/metadata search),
+  document detail page `/book/[slug]` with the FR-3 metadata visibility rule and
+  SEO `generateMetadata` (Open Graph), sitemap. Protected pdf.js reader
+  `/read/[slug]` with paginated rendering, zoom, dark mode, and a per-session
+  watermark (reader email + UTC timestamp). Entitlement is checked AT MINT TIME
+  in `/api/documents/[id]/read-url` (admin / completed purchase / active
+  membership) before a short-lived signed URL is issued; sample mode is open,
+  full mode gated. Signed URLs are same-origin relative. pdf.js worker + standard
+  fonts + cmaps are synced into `public/` on postinstall.
+  Verified: entitlement 200/403 matrix; reader loads (12 pages), watermark and
+  controls present. NOTE: the actual canvas pixels could not be screenshotted
+  because the preview pane is hidden in this environment (rAF is throttled when
+  `document.hidden`, which stalls canvas paint); pdf.js parsing + operator lists
+  resolve fine, so rendering works in a normal visible browser.
 - [ ] **Step 5 - Purchases, coupons, lifetime access**
   Buy flow → coupon apply → amount calc → Razorpay order → webhook → grant
   lifetime access; coupon engine (percentage/fixed, expiry, usage limits,

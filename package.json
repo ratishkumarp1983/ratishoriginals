@@ -13,7 +13,9 @@
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "sync:pdf-worker": "node scripts/sync-pdf-worker.mjs",
+    "postinstall": "node scripts/sync-pdf-worker.mjs"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -34,6 +36,7 @@
     "next-auth": "^5.0.0-beta.32",
     "next-themes": "^0.4.6",
     "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^4.10.38",
     "prisma": "^6.19.3",
     "razorpay": "^2.9.8",
     "react": "19.2.4",
