@@ -158,12 +158,13 @@ export default async function Home() {
           <div>
             <p className="text-xs font-medium uppercase tracking-widest text-brand-gold">About the author</p>
             <h2 className="mt-1 font-display text-2xl font-semibold text-brand-ink">Ratish Kumar</h2>
-            <p className="mt-1 text-sm text-brand-ink/70">Author, entrepreneur, and AI educator</p>
+            <p className="mt-1 text-sm text-brand-ink/70">Novelist, non-fiction author, entrepreneur, and AI educator</p>
             <p className="mt-4 max-w-xl text-brand-ink/80">
-              Ratish writes practical books on leadership, technology, and human
-              potential, distilling hard-won lessons into ideas you can act on.
-              Every title here is an original, written to challenge, inspire, and
-              create impact.
+              Ratish writes across fiction and non-fiction: novels and stories
+              alongside practical books on leadership, technology, and human
+              potential. Whether through a character or a hard-won lesson, every
+              title here is an original, written to challenge, inspire, and create
+              impact.
             </p>
             <Link href="/browse" className="mt-5 inline-flex items-center gap-1 text-sm font-medium text-brand-navy hover:underline">
               Read the books <ArrowRight className="h-4 w-4" />
