@@ -87,9 +87,22 @@ Tell me if any deviation should be reversed.
   activation despite double-complete; member-only 403 -> assign -> 200 with zero
   purchases; member coupon applies once active; forced expiry lazily downgrades
   to EXPIRED and revokes access + the coupon. 25 tests, build/lint/typecheck green.
-- [ ] **Step 7 - Reader library & progress**
-  Library (purchased + membership), reading history, continue reading, progress
-  (last page / completion %), wishlist.
+- [x] **Step 7 - Reader library & progress** (current checkpoint)
+  Library split into Owned (lifetime) and From-your-membership sections, each
+  card showing a progress bar + resume point (reading history folded into the
+  library per the owner's call), with a Continue-reading rail for in-progress
+  titles. Reading progress (FR-10): the reader auto-resumes to the saved page
+  (with a "start from the beginning" control) and persists last page / completion
+  % debounced in full mode; the progress endpoint re-checks entitlement and
+  clamps the page server-side. Named per-title bookmarks (a new `Bookmark` model)
+  add/jump/delete in the reader toolbar. Wishlist (FR-13): a dedicated `/wishlist`
+  page plus a save/unsave control on the book page (owned titles read
+  "In your library"). Owned wins over membership and duplicate plan titles show
+  once. Verified live end-to-end via curl: progress save/clamp/entitlement
+  (403)/anon (401), bookmark create/list/upsert/delete/entitlement, wishlist
+  add/idempotent/remove and both button states, library owned + membership
+  sections with dedup and the continue-reading rail. One migration
+  (`add_bookmark`); tsc/lint/build green, 30 tests.
 - [ ] **Step 8 - Admin dashboard & analytics**
   Sales, views, conversion, revenue, memberships, coupon usage; audit-log
   viewer.

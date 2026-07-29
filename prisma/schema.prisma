@@ -89,6 +89,7 @@ model User {
   reviewVotes     ReviewVote[]
   wishlist        Wishlist[]
   readingProgress ReadingProgress[]
+  bookmarks       Bookmark[]
   couponUses      CouponRedemption[]
   auditLogs       AuditLog[]
 
@@ -166,6 +167,7 @@ model Document {
   reviews             Review[]
   wishlistedBy        Wishlist[]
   readingProgress     ReadingProgress[]
+  bookmarks           Bookmark[]
   membershipDocuments MembershipDocument[]
   coupons             Coupon[]
   pages               DocumentPage[]
@@ -367,6 +369,24 @@ model Wishlist {
 
   @@unique([userId, documentId])
   @@index([userId])
+}
+
+// A reader's saved place markers within a title (SRS §6 reader feature). Auto
+// resume uses ReadingProgress.lastPage; these are explicit, named jump points.
+model Bookmark {
+  id         String   @id @default(uuid())
+  userId     String
+  documentId String
+  page       Int
+  label      String?
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  // One bookmark per page per reader per title; re-bookmarking a page updates it.
+  @@unique([userId, documentId, page])
+  @@index([userId, documentId])
 }
 
 // ---------------------------------------------------------------------------

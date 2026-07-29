@@ -25,6 +25,9 @@ export function UserMenu({
       <Link href="/library" className={link}>
         Library
       </Link>
+      <Link href="/wishlist" className={`hidden sm:inline ${link}`}>
+        Saved
+      </Link>
       <span
         className="hidden text-sm text-brand-cream/70 sm:inline"
         title={email}

@@ -8,6 +8,7 @@ import { formatPrice, isFree } from "@/lib/format";
 import { buttonVariants } from "@/components/ui/button";
 import { BuyButton } from "@/components/store/buy-button";
 import { BookCover } from "@/components/store/book-cover";
+import { WishlistButton } from "@/components/store/wishlist-button";
 import { env } from "@/lib/env";
 
 async function loadDocument(slug: string) {
@@ -70,6 +71,16 @@ export default async function BookPage({
 
   const access = await getReadAccess(user, doc.id);
 
+  // Wishlist state (FR-13): only relevant to a signed-in reader who cannot
+  // already read the title.
+  const wishlisted =
+    user && !access.canReadFull
+      ? !!(await prisma.wishlist.findUnique({
+          where: { userId_documentId: { userId: user.id, documentId: doc.id } },
+          select: { id: true },
+        }))
+      : false;
+
   // Visibility rule (FR-3): only metadata fields that have a value are shown,
   // in display order, and only active definitions.
   const visibleMetadata = doc.metadata
@@ -121,6 +132,14 @@ export default async function BookPage({
             >
               Read sample
             </Link>
+            {!access.canReadFull && (
+              <WishlistButton
+                documentId={doc.id}
+                initialWishlisted={wishlisted}
+                isAuthenticated={!!user}
+                signInHref={`/login?callbackUrl=${encodeURIComponent(`/book/${doc.slug}`)}`}
+              />
+            )}
           </div>
 
           <p className="whitespace-pre-line text-neutral-700 dark:text-neutral-300">

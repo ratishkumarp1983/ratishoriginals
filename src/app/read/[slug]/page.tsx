@@ -39,6 +39,22 @@ export default async function ReadPage({
   const mode: "sample" | "full" =
     access.canReadFull && modeParam !== "sample" ? "full" : "sample";
 
+  // Resume point + bookmarks (FR-10 / reader features), full mode only.
+  const canBookmark = mode === "full" && !!user;
+  const [progress, bookmarks] = canBookmark
+    ? await Promise.all([
+        prisma.readingProgress.findUnique({
+          where: { userId_documentId: { userId: user!.id, documentId: doc.id } },
+          select: { lastPage: true },
+        }),
+        prisma.bookmark.findMany({
+          where: { userId: user!.id, documentId: doc.id },
+          orderBy: { page: "asc" },
+          select: { id: true, page: true, label: true },
+        }),
+      ])
+    : [null, []];
+
   const stamp = new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC";
   const watermark =
     mode === "full"
@@ -57,6 +73,9 @@ export default async function ReadPage({
       title={doc.title}
       buyHref={`/book/${doc.slug}`}
       sampleNote={sampleNote}
+      initialPage={progress?.lastPage ?? 1}
+      initialBookmarks={bookmarks}
+      canBookmark={canBookmark}
     />
   );
 }

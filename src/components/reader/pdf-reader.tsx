@@ -10,15 +10,30 @@ import { Button } from "@/components/ui/button";
  * after checking entitlement. A per-session watermark (reader identity + time)
  * is overlaid on every page as a deterrent. The original file URL is never
  * exposed; basic copy deterrents are applied (no context menu, no selection).
+ *
+ * In full mode it also persists reading progress (FR-10: resume where you left
+ * off) and manages per-title bookmarks (named jump points).
  */
+interface Bookmark {
+  id: string;
+  page: number;
+  label: string | null;
+}
+
 interface PdfReaderProps {
   documentId: string;
   mode: "sample" | "full";
   watermark: string;
   title: string;
-  /** Shown in sample mode to nudge purchase (wired up in Step 5). */
+  /** Shown in sample mode to nudge purchase. */
   buyHref?: string;
   sampleNote?: string;
+  /** Saved resume point (FR-10); applied in full mode only. */
+  initialPage?: number;
+  /** The reader's saved bookmarks for this title. */
+  initialBookmarks?: Bookmark[];
+  /** Whether progress + bookmark controls are available (full mode, signed in). */
+  canBookmark?: boolean;
 }
 
 // pdf.js document/page types are loose here to avoid a hard dependency on the
@@ -39,6 +54,9 @@ export function PdfReader({
   title,
   buyHref,
   sampleNote,
+  initialPage = 1,
+  initialBookmarks = [],
+  canBookmark = false,
 }: PdfReaderProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const pdfRef = useRef<PdfDoc | null>(null);
@@ -50,6 +68,19 @@ export function PdfReader({
   const [dark, setDark] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [resumedFrom, setResumedFrom] = useState(0);
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>(initialBookmarks);
+  const [marksOpen, setMarksOpen] = useState(false);
+  const [label, setLabel] = useState("");
+  const savingRef = useRef(false);
+  // Latest page, for the unload flush whose listeners close over a stale value.
+  const pageNumRef = useRef(pageNum);
+  useEffect(() => {
+    pageNumRef.current = pageNum;
+  }, [pageNum]);
+
+  const trackProgress = mode === "full" && canBookmark;
 
   const renderPage = useCallback(async (n: number, s: number) => {
     const pdf = pdfRef.current;
@@ -121,7 +152,13 @@ export function PdfReader({
 
         pdfRef.current = pdf;
         setNumPages(pdf.numPages);
-        setPageNum(1);
+        // Resume at the saved page in full mode (FR-10); clamp to the real range.
+        const start =
+          mode === "full" && initialPage > 1
+            ? Math.min(initialPage, pdf.numPages)
+            : 1;
+        setPageNum(start);
+        setResumedFrom(start > 1 ? start : 0);
         setLoading(false);
       } catch (e) {
         if (!cancelled) {
@@ -134,7 +171,7 @@ export function PdfReader({
       cancelled = true;
       renderTaskRef.current?.cancel();
     };
-  }, [documentId, mode]);
+  }, [documentId, mode, initialPage]);
 
   // Re-render whenever the page or zoom changes and the doc is ready. The
   // cleanup cancels an in-flight render so switching pages quickly cannot leave
@@ -145,6 +182,74 @@ export function PdfReader({
     return () => renderTaskRef.current?.cancel();
   }, [pageNum, scale, loading, renderPage]);
 
+  // Persist reading progress, debounced, once the reader has settled on a page.
+  // Only in full mode for an entitled reader; samples never count.
+  useEffect(() => {
+    if (!trackProgress || loading || numPages === 0) return;
+    const page = pageNum;
+    const t = setTimeout(() => void saveProgress(documentId, page), 1200);
+    return () => clearTimeout(t);
+  }, [trackProgress, loading, numPages, pageNum, documentId]);
+
+  // Flush the current page when the tab is hidden or unloaded, so the last page
+  // read is not lost if the reader leaves without settling the debounce.
+  useEffect(() => {
+    if (!trackProgress) return;
+    const flush = () => {
+      if (numPages === 0) return;
+      void saveProgress(documentId, pageNumRef.current, true);
+    };
+    const onHide = () => {
+      if (document.visibilityState === "hidden") flush();
+    };
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", onHide);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", onHide);
+    };
+  }, [trackProgress, numPages, documentId]);
+
+  const addBookmark = useCallback(async () => {
+    if (savingRef.current) return;
+    savingRef.current = true;
+    try {
+      const res = await fetch(`/api/documents/${documentId}/bookmarks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ page: pageNum, label: label.trim() || undefined }),
+      });
+      if (res.ok) {
+        const { bookmark } = (await res.json()) as { bookmark: Bookmark };
+        setBookmarks((prev) =>
+          [...prev.filter((b) => b.page !== bookmark.page), bookmark].sort(
+            (a, b) => a.page - b.page,
+          ),
+        );
+        setLabel("");
+      }
+    } finally {
+      savingRef.current = false;
+    }
+  }, [documentId, pageNum, label]);
+
+  const removeBookmark = useCallback(
+    async (id: string) => {
+      const res = await fetch(`/api/documents/${documentId}/bookmarks`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookmarkId: id }),
+      });
+      if (res.ok) setBookmarks((prev) => prev.filter((b) => b.id !== id));
+    },
+    [documentId],
+  );
+
+  const goTo = useCallback(
+    (n: number) => setPageNum(Math.max(1, Math.min(numPages || n, n))),
+    [numPages],
+  );
+
   const wmSvg = encodeURIComponent(
     `<svg xmlns='http://www.w3.org/2000/svg' width='320' height='160'>` +
       `<text x='10' y='90' transform='rotate(-28 160 80)' fill='rgba(130,130,130,0.16)' ` +
@@ -153,6 +258,7 @@ export function PdfReader({
 
   const atStart = pageNum <= 1;
   const atEnd = pageNum >= numPages;
+  const currentBookmarked = bookmarks.some((b) => b.page === pageNum);
 
   return (
     <div className="flex flex-1 flex-col">
@@ -207,8 +313,87 @@ export function PdfReader({
           <Button variant="outline" size="sm" onClick={() => setDark((d) => !d)}>
             {dark ? "Light" : "Dark"}
           </Button>
+          {trackProgress && (
+            <div className="relative">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setMarksOpen((o) => !o)}
+                disabled={loading}
+                aria-expanded={marksOpen}
+              >
+                Bookmarks{bookmarks.length ? ` (${bookmarks.length})` : ""}
+              </Button>
+              {marksOpen && (
+                <div className="absolute right-0 top-full z-40 mt-1 w-72 rounded-lg border border-neutral-200 bg-white p-3 shadow-lg dark:border-neutral-800 dark:bg-neutral-900">
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={label}
+                      onChange={(e) => setLabel(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") void addBookmark();
+                      }}
+                      placeholder={`Label for page ${pageNum} (optional)`}
+                      maxLength={80}
+                      className="min-w-0 flex-1 rounded-md border border-neutral-300 bg-transparent px-2 py-1 text-sm dark:border-neutral-700"
+                    />
+                    <Button size="sm" onClick={() => void addBookmark()}>
+                      {currentBookmarked ? "Update" : "Save"}
+                    </Button>
+                  </div>
+                  <ul className="mt-3 max-h-64 space-y-1 overflow-auto">
+                    {bookmarks.length === 0 ? (
+                      <li className="py-2 text-center text-xs text-neutral-500">
+                        No bookmarks yet.
+                      </li>
+                    ) : (
+                      bookmarks.map((b) => (
+                        <li key={b.id} className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              goTo(b.page);
+                              setMarksOpen(false);
+                            }}
+                            className="flex-1 truncate rounded px-2 py-1 text-left text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                          >
+                            <span className="tabular-nums text-neutral-500">
+                              p.{b.page}
+                            </span>{" "}
+                            {b.label || "Bookmark"}
+                          </button>
+                          <button
+                            onClick={() => void removeBookmark(b.id)}
+                            className="rounded px-1.5 py-1 text-xs text-neutral-400 hover:text-red-600"
+                            aria-label={`Remove bookmark on page ${b.page}`}
+                          >
+                            Remove
+                          </button>
+                        </li>
+                      ))
+                    )}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Resume note */}
+      {resumedFrom > 0 && !loading && (
+        <div className="flex items-center justify-center gap-3 border-b border-neutral-200 bg-neutral-50 px-4 py-1.5 text-xs text-neutral-600 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400">
+          <span>Resumed at page {resumedFrom}.</span>
+          <button
+            onClick={() => {
+              setPageNum(1);
+              setResumedFrom(0);
+            }}
+            className="font-medium underline"
+          >
+            Start from the beginning
+          </button>
+        </div>
+      )}
 
       {/* Page canvas */}
       <div
@@ -264,6 +449,20 @@ export function PdfReader({
       )}
     </div>
   );
+}
+
+/** Fire-and-forget progress save; keepalive lets it survive an unload. */
+async function saveProgress(documentId: string, page: number, keepalive = false) {
+  try {
+    await fetch(`/api/documents/${documentId}/progress`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ page }),
+      keepalive,
+    });
+  } catch {
+    // Progress is best-effort; a failed save must never disrupt reading.
+  }
 }
 
 function escapeXml(s: string): string {
