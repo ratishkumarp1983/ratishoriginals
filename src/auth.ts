@@ -31,11 +31,22 @@ const providers: NextAuthConfig["providers"] = [
       if (!parsed.success) return null;
       const { email, password } = parsed.data;
 
-      // Throttle credential stuffing: cap attempts per IP and per account.
+      // Layered login throttle. Credential stuffing is slowed without letting
+      // one attacker lock a victim's account out (targeted-DoS):
+      //  - per IP: a general cap across all accounts from one source.
+      //  - per (email, IP): a tight cap on guessing ONE account from ONE
+      //    source. Scoping it to the IP means an attacker cannot lock the real
+      //    owner, who logs in from a different IP with a separate counter.
+      //  - per email (global): a generous distributed-brute-force backstop, set
+      //    high enough that locking a known victim is impractical. Turnstile
+      //    (enabled at go-live) is the stronger escalation for this last case.
       const ip = clientIp(new Headers(request?.headers as HeadersInit));
-      const byIp = await rateLimit(`login-ip:${ip}`, 15, 60_000);
-      const byEmail = await rateLimit(`login-email:${email}`, 8, 5 * 60_000);
-      if (!byIp.success || !byEmail.success) return null;
+      const [byIp, byEmailIp, byEmail] = await Promise.all([
+        rateLimit(`login-ip:${ip}`, 15, 60_000),
+        rateLimit(`login-email-ip:${email}:${ip}`, 8, 5 * 60_000),
+        rateLimit(`login-email:${email}`, 50, 15 * 60_000),
+      ]);
+      if (!byIp.success || !byEmailIp.success || !byEmail.success) return null;
 
       const user = await prisma.user.findUnique({ where: { email } });
       if (!user || !user.passwordHash) return null;
