@@ -1,0 +1,34 @@
+# Local development services for Scriptory.
+# Start:  docker compose up -d
+# Stop:   docker compose down   (add -v to also drop the data volume)
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: scriptory-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: scriptory
+      POSTGRES_PASSWORD: scriptory
+      POSTGRES_DB: scriptory
+    ports:
+      - "5432:5432"
+    volumes:
+      - scriptory_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scriptory -d scriptory"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: scriptory-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - scriptory_redisdata:/data
+
+volumes:
+  scriptory_pgdata:
+  scriptory_redisdata:

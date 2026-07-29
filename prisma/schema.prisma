@@ -1,0 +1,461 @@
+// Scriptory (RatishOriginals) — Prisma schema
+// Single-author publishing platform today, architected for a multi-author
+// marketplace tomorrow. See docs/ARCHITECTURE.md for the design rationale.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Role {
+  READER
+  ADMIN
+  AUTHOR // reserved for future marketplace
+}
+
+enum MembershipStatus {
+  NONE
+  PENDING
+  ACTIVE
+  EXPIRED
+}
+
+enum DocStatus {
+  DRAFT
+  PROCESSING
+  PUBLISHED
+  ARCHIVED
+}
+
+enum MetadataType {
+  TEXT
+  NUMBER
+  DATE
+  BOOLEAN
+  SELECT
+}
+
+enum PurchaseStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+enum VoteType {
+  HELPFUL
+  NOT_HELPFUL
+}
+
+// ---------------------------------------------------------------------------
+// Identity & auth (Auth.js Prisma adapter shape)
+// ---------------------------------------------------------------------------
+
+model User {
+  id               String           @id @default(uuid())
+  email            String           @unique
+  name             String?
+  image            String?
+  passwordHash     String?
+  googleId         String?          @unique
+  role             Role             @default(READER)
+  membershipStatus MembershipStatus @default(NONE)
+  emailVerified    DateTime?
+  mfaSecret        String? // admin MFA (TOTP), enabled in a later step
+  mfaEnabled       Boolean          @default(false)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  accounts        Account[]
+  sessions        Session[]
+  purchases       Purchase[]
+  memberships     UserMembership[]
+  reviews         Review[]
+  reviewVotes     ReviewVote[]
+  wishlist        Wishlist[]
+  readingProgress ReadingProgress[]
+  couponUses      CouponRedemption[]
+  auditLogs       AuditLog[]
+
+  @@index([membershipStatus])
+}
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ---------------------------------------------------------------------------
+// Content
+// ---------------------------------------------------------------------------
+
+model Document {
+  id          String    @id @default(uuid())
+  title       String
+  slug        String    @unique
+  description String    @db.Text
+  price       Decimal   @db.Decimal(10, 2)
+  currency    String    @default("INR")
+  coverImage  String?
+  storagePath String // opaque key into the storage adapter; never exposed to clients
+  fileType    String // pdf | doc | docx | txt | rtf
+  pageCount   Int?
+  samplePages Int       @default(5)
+  status      DocStatus @default(DRAFT)
+
+  // SEO (SRS §13)
+  seoTitle       String?
+  seoDescription String? @db.Text
+  ogImage        String?
+
+  // Future marketplace (SRS §15) — single author today
+  authorId String?
+  author   Author? @relation(fields: [authorId], references: [id])
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  publishedAt DateTime?
+
+  metadata            DocumentMetadata[]
+  purchases           Purchase[]
+  reviews             Review[]
+  wishlistedBy        Wishlist[]
+  readingProgress     ReadingProgress[]
+  membershipDocuments MembershipDocument[]
+  coupons             Coupon[]
+  pages               DocumentPage[]
+
+  @@index([status])
+  @@index([authorId])
+}
+
+// Rendered/protected page store — populated by the upload pipeline.
+// For the hybrid reader we keep per-page keys so we can serve one page at a
+// time behind short-lived signed URLs (and swap to rasterized images later).
+model DocumentPage {
+  id          String   @id @default(uuid())
+  documentId  String
+  pageNumber  Int
+  storagePath String // per-page protected asset key
+  width       Int?
+  height      Int?
+  createdAt   DateTime @default(now())
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, pageNumber])
+  @@index([documentId])
+}
+
+// ---------------------------------------------------------------------------
+// Dynamic metadata (SRS FR-3)
+// ---------------------------------------------------------------------------
+
+model MetadataDefinition {
+  id           String       @id @default(uuid())
+  name         String // human label, e.g. "Reading Time"
+  key          String       @unique // machine key, e.g. "reading_time"
+  type         MetadataType @default(TEXT)
+  displayOrder Int          @default(0)
+  active       Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+
+  values DocumentMetadata[]
+}
+
+model DocumentMetadata {
+  id         String @id @default(uuid())
+  documentId String
+  metadataId String
+  value      String @db.Text
+
+  document Document           @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  metadata MetadataDefinition @relation(fields: [metadataId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, metadataId])
+  @@index([documentId])
+}
+
+// ---------------------------------------------------------------------------
+// Commerce
+// ---------------------------------------------------------------------------
+
+model Purchase {
+  id                String         @id @default(uuid())
+  userId            String
+  documentId        String
+  amount            Decimal        @db.Decimal(10, 2)
+  currency          String         @default("INR")
+  status            PurchaseStatus @default(PENDING)
+  razorpayOrderId   String?        @unique
+  razorpayPaymentId String?
+  couponId          String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  document   Document           @relation(fields: [documentId], references: [id])
+  coupon     Coupon?            @relation(fields: [couponId], references: [id])
+  reviews    Review[]
+  couponUses CouponRedemption[]
+
+  @@index([userId])
+  @@index([documentId])
+  @@index([status])
+}
+
+model Membership {
+  id           String   @id @default(uuid())
+  name         String
+  slug         String   @unique
+  price        Decimal  @db.Decimal(10, 2)
+  currency     String   @default("INR")
+  durationDays Int
+  benefits     String   @db.Text // newline-separated or JSON string of benefit lines
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  userMemberships UserMembership[]
+  documents       MembershipDocument[]
+}
+
+model UserMembership {
+  id                String           @id @default(uuid())
+  userId            String
+  membershipId      String
+  status            MembershipStatus @default(PENDING)
+  startedAt         DateTime?
+  expiresAt         DateTime?
+  razorpayOrderId   String?          @unique
+  razorpayPaymentId String?
+  createdAt         DateTime         @default(now())
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  membership Membership @relation(fields: [membershipId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+}
+
+// Member-only content mapping (SRS: "Access member-only content")
+model MembershipDocument {
+  id           String @id @default(uuid())
+  membershipId String
+  documentId   String
+
+  membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  document   Document   @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([membershipId, documentId])
+}
+
+model Coupon {
+  id             String       @id @default(uuid())
+  code           String       @unique
+  discountType   DiscountType
+  discountValue  Decimal      @db.Decimal(10, 2)
+  expiryDate     DateTime?
+  usageLimit     Int? // total redemptions allowed across all users
+  usedCount      Int          @default(0)
+  oneTimePerUser Boolean      @default(false)
+  memberOnly     Boolean      @default(false)
+  documentId     String? // document-specific coupon
+  active         Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+
+  document    Document?          @relation(fields: [documentId], references: [id])
+  purchases   Purchase[]
+  redemptions CouponRedemption[]
+
+  @@index([documentId])
+}
+
+model CouponRedemption {
+  id         String   @id @default(uuid())
+  couponId   String
+  userId     String
+  purchaseId String?
+  createdAt  DateTime @default(now())
+
+  coupon   Coupon    @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purchase Purchase? @relation(fields: [purchaseId], references: [id])
+
+  @@index([couponId])
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Reading
+// ---------------------------------------------------------------------------
+
+model ReadingProgress {
+  id                String   @id @default(uuid())
+  userId            String
+  documentId        String
+  lastPage          Int      @default(1)
+  completionPercent Int      @default(0)
+  updatedAt         DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, documentId])
+  @@index([userId])
+}
+
+model Wishlist {
+  id         String   @id @default(uuid())
+  userId     String
+  documentId String
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, documentId])
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Reviews & ratings (SRS FR-12)
+// ---------------------------------------------------------------------------
+
+model Review {
+  id                 String   @id @default(uuid())
+  userId             String
+  documentId         String
+  purchaseId         String?
+  membershipAccess   Boolean  @default(false)
+  rating             Int // 1..5, validated in app layer
+  title              String?
+  review             String   @db.Text
+  containsSpoiler    Boolean  @default(false)
+  isVerifiedPurchase Boolean  @default(false)
+  isVerifiedMember   Boolean  @default(false)
+  isVisible          Boolean  @default(true)
+  isPinned           Boolean  @default(false)
+  adminReply         String?  @db.Text
+  adminReplyAt       DateTime?
+  helpfulCount       Int      @default(0)
+  notHelpfulCount    Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  document Document     @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  purchase Purchase?    @relation(fields: [purchaseId], references: [id])
+  votes    ReviewVote[]
+  edits    ReviewEdit[]
+
+  @@unique([userId, documentId])
+  @@index([documentId])
+  @@index([rating])
+}
+
+model ReviewVote {
+  id        String   @id @default(uuid())
+  reviewId  String
+  userId    String
+  voteType  VoteType
+  createdAt DateTime @default(now())
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, userId])
+}
+
+// Audit trail of review edits (SRS: "maintain an audit trail of review edits")
+model ReviewEdit {
+  id             String   @id @default(uuid())
+  reviewId       String
+  previousRating Int
+  previousTitle  String?
+  previousReview String   @db.Text
+  editedAt       DateTime @default(now())
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@index([reviewId])
+}
+
+// ---------------------------------------------------------------------------
+// Governance
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String?
+  action     String // e.g. DOCUMENT_UPLOAD, PURCHASE_COMPLETE, COUPON_CREATE
+  targetType String?
+  targetId   String?
+  metadata   Json?
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([action])
+  @@index([actorId])
+  @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Future marketplace (SRS §15) — present but unused in MVP
+// ---------------------------------------------------------------------------
+
+model Author {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  bio       String?  @db.Text
+  avatar    String?
+  createdAt DateTime @default(now())
+
+  documents Document[]
+}
