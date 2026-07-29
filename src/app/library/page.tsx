@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth-helpers";
 import { buttonVariants } from "@/components/ui/button";
+import { BookCover } from "@/components/store/book-cover";
 
 export const metadata: Metadata = { title: "Library" };
 export const dynamic = "force-dynamic";
@@ -43,21 +44,11 @@ export default async function LibraryPage() {
               href={`/read/${p.document.slug}`}
               className="group flex flex-col overflow-hidden rounded-xl border border-neutral-200 transition-colors hover:border-neutral-300 dark:border-neutral-800 dark:hover:border-neutral-700"
             >
-              <div className="aspect-[3/4] overflow-hidden bg-neutral-100 dark:bg-neutral-900">
-                {p.document.coverImage ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={`/api/documents/${p.document.id}/cover`}
-                    alt={`Cover of ${p.document.title}`}
-                    className="h-full w-full object-cover"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center p-4 text-center text-sm text-neutral-400">
-                    {p.document.title}
-                  </div>
-                )}
-              </div>
+              <BookCover
+                documentId={p.document.id}
+                title={p.document.title}
+                className="aspect-[3/4]"
+              />
               <div className="flex flex-1 flex-col gap-1 p-3">
                 <h3 className="line-clamp-2 text-sm font-medium">{p.document.title}</h3>
                 <span className="mt-auto text-xs text-neutral-500 group-hover:underline">

@@ -459,3 +459,15 @@ model Author {
 
   documents Document[]
 }
+
+// ---------------------------------------------------------------------------
+// Audience (email list)
+// ---------------------------------------------------------------------------
+
+model NewsletterSubscriber {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  source        String? // where they signed up, e.g. "home"
+  unsubscribed  Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+}

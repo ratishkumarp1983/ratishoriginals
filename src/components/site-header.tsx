@@ -1,33 +1,42 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth-helpers";
 import { UserMenu } from "@/components/user-menu";
-import { buttonVariants } from "@/components/ui/button";
 
-/** Server component: reads the session and renders auth-aware navigation. */
+const NAV = [
+  { href: "/browse", label: "Books" },
+  { href: "/membership", label: "Membership" },
+];
+
+/** Brand header: navy chrome, serif wordmark, gold primary action. */
 export async function SiteHeader() {
   const user = await getCurrentUser();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/80 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/80">
-      <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-6">
-        <div className="flex items-center gap-5">
-          <Link href="/" className="font-semibold tracking-tight">
-            Ratish Originals
+    <header className="sticky top-0 z-40 border-b border-white/10 bg-brand-navy text-brand-cream">
+      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-6">
+        <div className="flex items-center gap-8">
+          <Link href="/" className="flex flex-col leading-none">
+            <span className="font-display text-xl font-semibold tracking-wide text-white">
+              Ratish Originals
+            </span>
+            <span className="mt-0.5 text-[10px] uppercase tracking-[0.22em] text-brand-gold">
+              Stories. Ideas. Impact.
+            </span>
           </Link>
-          <Link
-            href="/browse"
-            className="text-sm text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
-          >
-            Browse
-          </Link>
-          <Link
-            href="/membership"
-            className="text-sm text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
-          >
-            Membership
-          </Link>
+          <nav className="hidden items-center gap-6 text-sm md:flex">
+            {NAV.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="text-brand-cream/75 transition-colors hover:text-white"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
         </div>
-        <nav className="flex items-center gap-2">
+
+        <nav className="flex items-center gap-3">
           {user ? (
             <UserMenu
               email={user.email}
@@ -38,12 +47,15 @@ export async function SiteHeader() {
             <>
               <Link
                 href="/login"
-                className={buttonVariants({ variant: "ghost", size: "sm" })}
+                className="text-sm text-brand-cream/80 transition-colors hover:text-white"
               >
                 Sign in
               </Link>
-              <Link href="/register" className={buttonVariants({ size: "sm" })}>
-                Create account
+              <Link
+                href="/register"
+                className="rounded-md bg-brand-gold px-4 py-2 text-sm font-medium text-brand-navy transition-colors hover:bg-brand-gold-soft"
+              >
+                Sign up
               </Link>
             </>
           )}

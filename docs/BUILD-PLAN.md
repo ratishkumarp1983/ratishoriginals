@@ -101,6 +101,25 @@ Tell me if any deviation should be reversed.
   Rate limiting, security headers/CSP, SEO (sitemap, structured data, OG),
   legal pages, Sentry/PostHog wiring, Dockerfile, CI, deployment docs.
 
+### Brand home pass (author-brand storefront)
+
+Between Steps 6 and 7, on the owner's strategy call (revenue + publicity), the
+public surface was rebranded to a premium author-brand look:
+
+- Theme: navy / gold / cream palette + Playfair Display serif display via CSS
+  brand tokens (fixed, not light/dark adaptive); rebranded shared header and a
+  new footer.
+- Author-forward home (auth-aware): flagship hero, trust strip, latest releases,
+  membership CTA, about-the-author, and newsletter. Logged-in readers get a
+  library-first hero; visitors get the marketing view. No fabricated social
+  proof (no fake reader/review counts) - real data populates as earned.
+- Owned-audience engine: real newsletter capture (NewsletterSubscriber model +
+  `/api/newsletter`, dedupe, welcome email via the email adapter).
+- `BookCover` component renders a premium styled panel and overlays a real
+  cover only when one loads at a usable size (no empty placeholder boxes).
+- Legal page stubs (terms / privacy / refund) so footer links resolve; real
+  content lands in Step 10.
+
 ### Step 3 review round (independent reviewer + QA)
 
 After Step 3, an independent code review and an adversarial QA pass ran. All

@@ -7,6 +7,7 @@ import { getReadAccess } from "@/lib/entitlements";
 import { formatPrice, isFree } from "@/lib/format";
 import { buttonVariants } from "@/components/ui/button";
 import { BuyButton } from "@/components/store/buy-button";
+import { BookCover } from "@/components/store/book-cover";
 import { env } from "@/lib/env";
 
 async function loadDocument(slug: string) {
@@ -80,20 +81,12 @@ export default async function BookPage({
       <div className="grid grid-cols-1 gap-8 sm:grid-cols-[220px_1fr]">
         {/* Cover */}
         <div className="mx-auto w-full max-w-[220px]">
-          <div className="aspect-[3/4] overflow-hidden rounded-xl border border-neutral-200 bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-900">
-            {doc.coverImage ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={`/api/documents/${doc.id}/cover`}
-                alt={`Cover of ${doc.title}`}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center p-4 text-center text-sm text-neutral-400">
-                {doc.title}
-              </div>
-            )}
-          </div>
+          <BookCover
+            documentId={doc.id}
+            title={doc.title}
+            className="aspect-[3/4] rounded-xl ring-1 ring-black/5"
+            titleClass="text-xl"
+          />
         </div>
 
         {/* Details */}
