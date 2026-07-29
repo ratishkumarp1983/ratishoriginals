@@ -156,6 +156,32 @@ export async function createOrder(
   }
 
   const gateway = payments();
+
+  // Reuse a still-live PENDING order for this title at the same price and
+  // coupon (e.g. the user reopened checkout) instead of minting a new gateway
+  // order. Overwriting razorpayOrderId below would orphan the earlier order, so
+  // a payment later captured against it could never be matched back to this
+  // purchase and would strand as an unreconcilable capture.
+  const existing = await prisma.purchase.findUnique({ where: key });
+  if (
+    existing &&
+    existing.status === "PENDING" &&
+    existing.razorpayOrderId &&
+    existing.createdAt.getTime() > Date.now() - RESERVATION_WINDOW_MS &&
+    Number(existing.amount.toString()) === finalAmount &&
+    (existing.couponId ?? null) === couponId
+  ) {
+    return {
+      kind: "order",
+      purchaseId: existing.id,
+      orderId: existing.razorpayOrderId,
+      amountMinor: toMinor(finalAmount),
+      currency: existing.currency,
+      keyId: gateway.keyId,
+      driver: gateway.name,
+    };
+  }
+
   const purchase = await prisma.purchase.upsert({
     where: key,
     create: {
