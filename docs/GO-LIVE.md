@@ -13,6 +13,10 @@ See `docs/DEPLOYMENT.md` for how to deploy.
 - [ ] `TRUST_PROXY=true` (the app is behind App Platform / a reverse proxy that
       sets a real client IP and strips client-supplied IP headers). Without this,
       per-IP limits including the login throttle do not work correctly.
+- [ ] Google sign-in (optional): `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` from a
+      Google Cloud OAuth client, with the production redirect URI
+      `https://YOUR-DOMAIN/api/auth/callback/google` authorised. The "Continue
+      with Google" button appears automatically once both are set.
 
 ## Payments (Razorpay)
 
