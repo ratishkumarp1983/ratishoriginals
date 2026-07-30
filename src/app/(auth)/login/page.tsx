@@ -27,7 +27,7 @@ export default async function LoginPage({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Welcome back</CardTitle>
+        <CardTitle>Welcome</CardTitle>
         <CardDescription>Sign in to your Ratish Originals account.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
