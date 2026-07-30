@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+# Dummy values so env validation and the build pass. No real DB is contacted:
+# every page is dynamic, so the build does not query the database.
+env:
+  DATABASE_URL: postgresql://user:pass@localhost:5432/db
+  AUTH_SECRET: ci-dummy-secret-0123456789abcdef
+  APP_URL: http://localhost:3000
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npx tsc --noEmit
+      - run: npm run lint
+      - run: npx vitest run
+      - run: npm run build

@@ -59,7 +59,13 @@ const schema = z.object({
   TURNSTILE_SITE_KEY: z.string().optional().default(""),
   TURNSTILE_SECRET_KEY: z.string().optional().default(""),
 
+  // Error monitoring (Sentry) and product analytics (PostHog). All optional and
+  // env-gated: with no keys the SDKs never initialise and make no network calls.
   SENTRY_DSN: z.string().optional().default(""),
+  NEXT_PUBLIC_SENTRY_DSN: z.string().optional().default(""),
+  SENTRY_ENVIRONMENT: z.string().optional().default(""),
+  NEXT_PUBLIC_POSTHOG_KEY: z.string().optional().default(""),
+  NEXT_PUBLIC_POSTHOG_HOST: z.string().optional().default(""),
 
   ADMIN_EMAIL: z.string().email().default("admin@ratishoriginals.local"),
   ADMIN_PASSWORD: z.string().min(12).default("ChangeMe-Admin-123456"),

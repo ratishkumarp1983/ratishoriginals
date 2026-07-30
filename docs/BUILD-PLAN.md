@@ -135,9 +135,37 @@ Tell me if any deviation should be reversed.
   403/401, both verified badges, edit snapshot, votes + self-vote 400 + toggle,
   average and distribution, spoiler collapse, every moderation action, analytics
   page, and admin authz (307 / 403). tsc/lint/build green, 38 tests (3 new).
-- [ ] **Step 10 - Hardening & delivery**
-  Rate limiting, security headers/CSP, SEO (sitemap, structured data, OG),
-  legal pages, Sentry/PostHog wiring, Dockerfile, CI, deployment docs.
+- [x] **Step 10 - Hardening & delivery** (current checkpoint)
+  Nonce + strict-dynamic CSP set per request in middleware (drops
+  `script-src 'unsafe-inline'`; Razorpay allowed, and analytics/error hosts added
+  to connect-src only when their env keys are set); the static security headers
+  stay in `next.config.ts`. Error monitoring (Sentry) and product analytics
+  (PostHog) wired env-gated and bundled from npm (no external script, so the
+  strict CSP holds) via `instrumentation.ts` / `instrumentation-client.ts` and a
+  client `PostHogProvider`; both no-op with no keys. SEO: `robots.ts` (crawl the
+  storefront, disallow admin/api/reader/account/checkout) and JSON-LD structured
+  data (Organization + WebSite on the home, Book + Offer + real AggregateRating on
+  book pages); the sitemap is now `force-dynamic` so the build never depends on
+  the database. Full legal drafts (terms / privacy / refund) accurate to the
+  platform with `[PLACEHOLDER]` fields to fill. GitHub Actions CI (tsc / lint /
+  vitest / build). `docs/DEPLOYMENT.md` (DigitalOcean App Platform, deploy from
+  source, no Docker; Neon + Upstash + R2) and `docs/GO-LIVE.md` (the full
+  pre-launch checklist: rotate admin password, real Razorpay + webhook secret,
+  Turnstile, TRUST_PROXY=true, migrations, fill legal, confirm CSP vs live
+  Razorpay). Verified on a production build: CSP header carries a nonce with no
+  script `unsafe-inline`, Next nonced its scripts and pages render, all security
+  headers present, robots/sitemap/JSON-LD resolve. tsc/lint/build green, 38 tests.
+
+  Go-live caveat: confirm the strict CSP against the live Razorpay checkout with
+  real keys; if it needs `'unsafe-eval'`, add it in `src/lib/csp.ts` (documented
+  in GO-LIVE). This is the only item that cannot be verified without live keys.
+
+## Phase 1 MVP - COMPLETE
+
+All ten MVP steps are built, verified, and committed. Remaining work before a
+public launch is the owner-supplied go-live configuration in `docs/GO-LIVE.md`
+(real secrets, filled legal content, and the live-Razorpay CSP confirmation),
+not code.
 
 ### Brand home pass (author-brand storefront)
 

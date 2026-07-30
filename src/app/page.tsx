@@ -7,8 +7,33 @@ import { formatPrice } from "@/lib/format";
 import { DocumentCard } from "@/components/store/document-card";
 import { BookCover } from "@/components/store/book-cover";
 import { NewsletterForm } from "@/components/store/newsletter-form";
+import { JsonLd } from "@/components/seo/json-ld";
+import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
+
+const siteLd: Record<string, unknown> = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      name: "Ratish Originals",
+      url: env.APP_URL,
+      description:
+        "Original fiction and non-fiction by Ratish Kumar, sold direct with lifetime online reading.",
+    },
+    {
+      "@type": "WebSite",
+      name: "Ratish Originals",
+      url: env.APP_URL,
+      potentialAction: {
+        "@type": "SearchAction",
+        target: `${env.APP_URL}/browse?q={search_term_string}`,
+        "query-input": "required name=search_term_string",
+      },
+    },
+  ],
+};
 
 const TRUST = [
   { icon: BookOpen, title: "Preview before you buy", note: "Read sample chapters" },
@@ -34,6 +59,7 @@ export default async function Home() {
 
   return (
     <>
+      <JsonLd data={siteLd} />
       {/* Hero */}
       <section className="bg-brand-navy text-brand-cream">
         <div className="mx-auto grid w-full max-w-6xl items-center gap-10 px-6 py-16 md:grid-cols-2 md:py-24">

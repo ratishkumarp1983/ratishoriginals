@@ -2,6 +2,10 @@ import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
 import { env } from "@/lib/env";
 
+// Generated per request, not at build time: the sitemap queries the database,
+// which must not be a build-time dependency (the CI build has no real DB).
+export const dynamic = "force-dynamic";
+
 /** Sitemap of static pages plus every published document (SRS §13). */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = env.APP_URL.replace(/\/$/, "");

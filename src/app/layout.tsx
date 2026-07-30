@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Geist_Mono, Fraunces } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
+import { PostHogProvider } from "@/components/posthog-provider";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
@@ -45,11 +46,13 @@ export default function RootLayout({
       className={`${inter.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <Providers>
-          <SiteHeader />
-          {children}
-          <SiteFooter />
-        </Providers>
+        <PostHogProvider>
+          <Providers>
+            <SiteHeader />
+            {children}
+            <SiteFooter />
+          </Providers>
+        </PostHogProvider>
       </body>
     </html>
   );

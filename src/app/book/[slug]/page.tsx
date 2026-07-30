@@ -11,7 +11,8 @@ import { BookCover } from "@/components/store/book-cover";
 import { WishlistButton } from "@/components/store/wishlist-button";
 import { ViewBeacon } from "@/components/store/view-beacon";
 import { ReviewsSection } from "@/components/reviews/reviews-section";
-import type { ReviewSort } from "@/lib/reviews";
+import { getRatingSummary, type ReviewSort } from "@/lib/reviews";
+import { JsonLd } from "@/components/seo/json-ld";
 import { env } from "@/lib/env";
 
 const REVIEW_SORTS: ReviewSort[] = ["helpful", "highest", "lowest", "newest", "oldest"];
@@ -98,8 +99,39 @@ export default async function BookPage({
     .filter((m) => m.metadata.active && m.value.trim())
     .sort((a, b) => a.metadata.displayOrder - b.metadata.displayOrder);
 
+  const ratingSummary = doc.status === "PUBLISHED" ? await getRatingSummary(doc.id) : null;
+  const bookLd: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "Book",
+    name: doc.title,
+    author: { "@type": "Person", name: "Ratish Kumar" },
+    description: (doc.seoDescription || doc.description).slice(0, 500),
+    url: `${env.APP_URL}/book/${doc.slug}`,
+    inLanguage: "en",
+    ...(doc.coverImage ? { image: `${env.APP_URL}/api/documents/${doc.id}/cover` } : {}),
+    offers: {
+      "@type": "Offer",
+      price: Number(doc.price.toString()).toFixed(2),
+      priceCurrency: doc.currency,
+      availability: "https://schema.org/InStock",
+      url: `${env.APP_URL}/book/${doc.slug}`,
+    },
+    ...(ratingSummary && ratingSummary.count > 0
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: ratingSummary.average,
+            reviewCount: ratingSummary.count,
+            bestRating: 5,
+            worstRating: 1,
+          },
+        }
+      : {}),
+  };
+
   return (
     <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-10">
+      {doc.status === "PUBLISHED" && <JsonLd data={bookLd} />}
       {doc.status === "PUBLISHED" && !isAdmin && <ViewBeacon documentId={doc.id} />}
       <div className="grid grid-cols-1 gap-8 sm:grid-cols-[220px_1fr]">
         {/* Cover */}
